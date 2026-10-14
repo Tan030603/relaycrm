@@ -1,7 +1,7 @@
 # RelayCRM — Multi-Tenant CRM with Event-Driven Workflow Automation
 
 > Working title. Status: **Draft v0.1** (design before demo build)
-> Stack: TypeScript, Node.js, PostgreSQL, Redis + BullMQ, Docker, GitHub Actions (Kubernetes after demo)
+> Stack: TypeScript everywhere. NestJS (API + worker), Vue 3 (SPA), Prisma, PostgreSQL, Redis + BullMQ, Docker, GitHub Actions (Kubernetes after demo)
 
 ---
 
@@ -47,7 +47,7 @@ Time-based triggers (idle lead), webhook action, WhatsApp action, audit log, das
 ### 3.1 High-level diagram
 
 ```
- Browser (React/Vue SPA)
+ Browser (Vue 3 SPA)
         │  HTTPS
         ▼
  ┌──────────────┐        ┌────────────────────┐
@@ -442,7 +442,8 @@ User-facing observability: the **execution log UI** is a product feature, not ju
 
 ### 11.3 Migrations
 
-- Versioned SQL migrations (e.g. Prisma Migrate, Drizzle, or node-pg-migrate). Pick one that allows raw SQL, because RLS policies and partitions need it.
+- Prisma Migrate. RLS policies and partitions are written as raw SQL inside the generated migration files.
+- Tenant context: every query runs inside a Prisma interactive transaction (via a client extension) that first calls `set_config('app.tenant_id', ..., true)`.
 - Expand/contract pattern for zero-downtime changes (add nullable → backfill → enforce → drop old).
 
 ---
@@ -476,7 +477,7 @@ relaycrm/
 ├─ apps/
 │  ├─ api/            # HTTP server entrypoint
 │  ├─ worker/         # queue consumers + outbox relay entrypoint
-│  └─ web/            # frontend SPA
+│  └─ web/            # Vue 3 SPA
 ├─ packages/
 │  ├─ core/           # domain logic (deals, rules engine), no framework deps
 │  ├─ db/             # migrations, RLS policies, tenant-aware client
@@ -523,9 +524,9 @@ relaycrm/
 
 ## 16. Open Questions
 
-1. Frontend framework: React or Vue? (You already know Vue from your internship; React is more common in overseas job listings.)
-2. ORM/query layer: Prisma (fast to build, awkward with RLS and raw SQL) vs Drizzle/Kysely (closer to SQL)?
-3. NestJS vs Fastify for the API structure?
+1. ~~Frontend framework~~ **Decided: Vue 3 + TypeScript.**
+2. ~~ORM/query layer~~ **Decided: Prisma** (raw SQL migrations for RLS; transaction wrapper sets tenant context).
+3. ~~API framework~~ **Decided: NestJS** (same codebase serves the `api` and `worker` entrypoints).
 4. Should reps be able to create their own rules, or owners only (v1 assumes owners only)?
 5. Which email provider for non-dev environments (Resend, SES, SMTP relay)?
 6. Is a free tier with hard quotas needed for the live demo deployment?

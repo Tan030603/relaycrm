@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: relaycrm
+          POSTGRES_PASSWORD: relaycrm
+          POSTGRES_DB: relaycrm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U relaycrm -d relaycrm"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+    env:
+      MIGRATION_DATABASE_URL: postgresql://relaycrm:relaycrm@localhost:5432/relaycrm
+      DATABASE_URL: postgresql://app_user:app_user_ci@localhost:5432/relaycrm
+      JWT_SECRET: ci-only-secret-at-least-32-characters-long
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create app_user (non-superuser, no BYPASSRLS)
+        run: psql "$MIGRATION_DATABASE_URL" -c "CREATE ROLE app_user LOGIN PASSWORD 'app_user_ci' NOSUPERUSER NOBYPASSRLS"
+
+      - name: Typecheck and build
+        run: pnpm build
+
+      - name: Migrate
+        run: pnpm --filter api exec prisma migrate deploy
+
+      - name: Tests (incl. tenant isolation suite)
+        run: pnpm test
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build API image
+        run: docker build -f infra/docker/api.Dockerfile -t relaycrm-api:${{ github.sha }} .

@@ -1,0 +1,79 @@
+// Every tenant-owned table has tenant_id, RLS policies (see the migration SQL),
+// and indexes that start with tenant_id. Ids are uuidv7 (time-ordered), which keeps
+// btree inserts local and lets list endpoints paginate by id.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  owner
+  rep
+
+  @@map("role")
+}
+
+model Tenant {
+  id          String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  name        String
+  slug        String       @unique
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  memberships Membership[]
+  contacts    Contact[]
+
+  @@map("tenants")
+}
+
+// Global (no tenant_id): one person can belong to several tenants via memberships.
+model User {
+  id            String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  email         String       @unique
+  passwordHash  String       @map("password_hash")
+  name          String
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  memberships   Membership[]
+  ownedContacts Contact[]
+
+  @@map("users")
+}
+
+model Membership {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      Role
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+model Contact {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  email     String?
+  phone     String?
+  company   String?
+  source    String?
+  ownerId   String?  @map("owner_id") @db.Uuid
+  tags      String[] @default([])
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner     User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, id])
+  @@index([tenantId, email])
+  @@index([tenantId, ownerId])
+  @@map("contacts")
+}
