@@ -1,4 +1,4 @@
-# FlowCRM — Multi-Tenant CRM with Event-Driven Workflow Automation
+# RelayCRM — Multi-Tenant CRM with Event-Driven Workflow Automation
 
 > Working title. Status: **Draft v0.1** (design before demo build)
 > Stack: TypeScript, Node.js, PostgreSQL, Redis + BullMQ, Docker, GitHub Actions (Kubernetes after demo)
@@ -7,7 +7,7 @@
 
 ## 1. Overview
 
-FlowCRM is a multi-tenant SaaS CRM. Each company (tenant) gets an isolated workspace to manage leads, deals and tasks, and can build **no-code automation rules** (trigger → conditions → actions) that run reliably in the background.
+RelayCRM is a multi-tenant SaaS CRM. Each company (tenant) gets an isolated workspace to manage leads, deals and tasks, and can build **no-code automation rules** (trigger → conditions → actions) that run reliably in the background.
 
 ### 1.1 Goals
 
@@ -472,7 +472,7 @@ Record results in `docs/benchmarks.md` with hardware, dataset size and charts. R
 ## 13. Repository Layout
 
 ```
-flowcrm/
+relaycrm/
 ├─ apps/
 │  ├─ api/            # HTTP server entrypoint
 │  ├─ worker/         # queue consumers + outbox relay entrypoint
