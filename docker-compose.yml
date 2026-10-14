@@ -1,0 +1,51 @@
+name: relaycrm
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: relaycrm
+      POSTGRES_PASSWORD: relaycrm
+      POSTGRES_DB: relaycrm
+    ports:
+      - "5440:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./infra/docker/postgres-init.sql:/docker-entrypoint-initdb.d/01-app-user.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U relaycrm -d relaycrm"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  # One-shot: applies migrations as the table owner, then exits.
+  migrate:
+    build:
+      context: .
+      dockerfile: infra/docker/api.Dockerfile
+      target: build
+    working_dir: /app/apps/api
+    command: ["node_modules/.bin/prisma", "migrate", "deploy"]
+    environment:
+      MIGRATION_DATABASE_URL: postgresql://relaycrm:relaycrm@postgres:5432/relaycrm
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/api.Dockerfile
+    environment:
+      DATABASE_URL: postgresql://app_user:app_user_dev@postgres:5432/relaycrm
+      DB_POOL_MAX: "10"
+      JWT_SECRET: dev-only-change-me-to-a-long-random-string
+      PORT: "4000"
+    ports:
+      - "4000:4000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
