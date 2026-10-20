@@ -4,6 +4,8 @@ Multi-tenant CRM with event-driven workflow automation. Each company gets an iso
 
 TypeScript end to end: **NestJS** API + worker, **Vue 3** SPA, **Prisma 7** on **PostgreSQL 18** (Row-Level Security), **BullMQ** on Redis, Docker, GitHub Actions, Kubernetes manifests. Design: [docs/SPECS.md](docs/SPECS.md) · Decisions: [docs/adr](docs/adr) · Numbers: [docs/benchmarks.md](docs/benchmarks.md).
 
+**[Watch the 80-second demo](demo/relaycrm-demo.mp4)**: a $120,000 deal reaches Proposal and a rule creates the review task and sends the email, visible in the run log and Mailpit.
+
 ## Run it
 
 ```bash
