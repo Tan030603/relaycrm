@@ -27,7 +27,7 @@ import { DealsController } from './deals.controller';
 import { FormsController, PublicFormsController } from './forms.controller';
 import { GraphqlController } from './graphql.controller';
 import { Idempotent } from './idempotency';
-import { closeRedis, log } from './infra';
+import { closeShared, log } from './infra';
 import { TasksController } from './tasks.controller';
 import { TeamController } from './team.controller';
 import { TodayController } from './today.controller';
@@ -125,7 +125,7 @@ function jwtSecret() {
 })
 class AppModule implements OnApplicationShutdown {
   onApplicationShutdown() {
-    closeRedis();
+    closeShared();
   }
 }
 

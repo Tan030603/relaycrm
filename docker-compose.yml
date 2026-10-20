@@ -15,6 +15,7 @@ x-app-env: &app-env
   WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-10}
   REDIS_URL: redis://redis:6379
   SMTP_URL: smtp://mailpit:1025
+  SMTP_POOL: ${SMTP_POOL:-5} # pooled SMTP connections per process
   JWT_SECRET: dev-only-change-me-to-a-long-random-string
   APP_URL: http://localhost:8080
   ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
@@ -28,6 +29,9 @@ x-app-env: &app-env
 services:
   postgres:
     image: postgres:18-alpine
+    # pg_stat_statements: per-query cost. max_wal_size: under heavy run writes the 1 GB default
+    # forced a checkpoint (and a burst of full-page writes) every few seconds.
+    command: ["postgres", "-c", "shared_preload_libraries=pg_stat_statements", "-c", "shared_buffers=1GB", "-c", "max_wal_size=8GB", "-c", "checkpoint_timeout=15min"]
     environment:
       POSTGRES_USER: relaycrm
       POSTGRES_PASSWORD: relaycrm

@@ -140,7 +140,25 @@ Follow-up experiments, same 30,000-event backlog:
 | Fewer transactions per run (load + start in one; `create_task` and its step bookkeeping in one; finish merged into the last step: ~9 → ~5 transactions) | 183 (steps: create_task 42 ms avg, send_email 150 ms avg) |
 | Same + 50 jobs in flight per worker (instead of 10) | 133: worker processes reach ~70% CPU, Postgres ~2.7 cores, transactions wait on busy event loops |
 
-**Not reached: 1,000 runs/s.** The limit is not CPU (workers ~2% each, Postgres ~1.8 cores): `pg_stat_activity` shows connections "idle in transaction / ClientRead". Each run uses about six interactive transactions with several round trips each, and a connection is held for every round trip; throughput ≈ connections ÷ transaction time, and an extra hop (PgBouncer, or the k3s → host network path) makes every transaction longer. Cutting transactions did not move the number, and more concurrency per process made it worse, so the ceiling on this machine is CPU: one 10-core laptop runs Postgres, Redis, Mailpit, Docker's VM and every worker. Each run is ~5 transactions plus an SMTP send, about 0.2–0.3 s of work spread over Node and Postgres; at ~250 runs/s the box is busy. Reaching 1,000 runs/s is a hardware and topology step (workers on their own nodes scaled by KEDA, a dedicated Postgres, a real SMTP provider), not a design change. It stays an unverified target until it runs on such hardware.
+Second round (2026-10-20, `scripts/bench-runs.sh 30000`, same backlog), measuring before changing anything:
+
+| Finding | Fix | Effect |
+|---|---|---|
+| The reaper's `stale_runs()` scanned the whole run partition: **25–35 s per call, every minute**, competing with every run write | Partial index on unfinished runs, and the function restated so its generic plan uses it (migrations `20261020000000`, `20261020000100`) | 9 ms per call |
+| SMTP sends opened a new connection per message (TCP + EHLO) | Pooled transport (`SMTP_POOL`, default 5 per process) | send step 150 → 109 ms |
+| ~5 transactions per run (`send_email` also opened its own for the activity row) | One transaction walks the database-only actions up to the next external one; the send runs with no transaction open; the next transaction records its result and the activity | 5 → 2 transactions (2 commits) per run |
+| WAL-size checkpoints every few seconds (99 requested vs 67 timed) | `max_wal_size=8GB`, `checkpoint_timeout=15min` in Compose | no throughput change |
+| `synchronous_commit=off` (diagnostic only, reverted) | none | no change: fsync is not the limit |
+
+Results: 8 workers in Docker 180–254 runs/s (run-to-run noise is large on a shared laptop); 4 workers run natively on macOS **225 runs/s** (plus 410 rule evaluations/s). More jobs in flight (`WORKER_CONCURRENCY=30`, `SMTP_POOL=20`) made it worse (214): sends slowed to 328 ms.
+
+**Not reached: 1,000 runs/s. Where the time goes, measured:**
+
+- Workers are cheap: one native worker profiled at ~4.7 ms CPU per run (Prisma ~27% of samples, idle 28%). In Docker's VM the same work showed ~5× the CPU, so the in-VM numbers overstate worker cost.
+- Postgres is the cost: with native workers it used **3.5 cores at 225 runs/s, ~16 ms of database CPU per run** (each event also writes a `skipped` row for the rule that did not match). A single-row run update costs ~1 ms planning + ~0.8 ms execution even on an idle server: every status change rewrites all 7 index entries (no HOT update, `status` is indexed), and Prisma re-plans every statement (unnamed statements). A run is ~20 statements.
+- `pg_stat_activity` during load: mostly "idle in transaction / ClientRead" (round trips) and `WALWrite` waits.
+
+Capacity model: 1,000 runs/s × ~16 ms ≈ **16 Postgres cores** at today's cost per run, plus ~5 worker cores and an SMTP provider that accepts sends in parallel (Mailpit's per-send time grew with concurrency). This laptop's Docker VM has 10 cores shared by Postgres, Redis, Mailpit and the workers, so the target cannot be shown here. The design scales out: tenant cells (section 8.3 stage 5) split the database load across separate Postgres servers, and workers scale with KEDA. Next cuts if a single cell must do it: drop `status` from the run indexes so status updates are HOT, batch several runs per transaction, and skip writing `skipped` rows (count them instead).
 
 ### 10. Redis failover (Sentinel)
 
@@ -164,5 +182,5 @@ Compose profile `ha`: Redis primary, one replica, three Sentinels; API and worke
 
 ## Not measured yet
 
-- 1,000 runs/s processing (see 9: 248 runs/s measured, bottleneck identified).
+- 1,000 runs/s processing (see 9: ~225 runs/s measured; ~16 ms of Postgres CPU per run, so it needs ~16 database cores or several cells).
 - A multi-node cluster or managed Postgres/Redis; everything here ran on one laptop.

@@ -56,9 +56,12 @@ export function redis() {
   return fast;
 }
 
-export function closeRedis() {
+/** Closes the process-wide clients (fast Redis, SMTP pool) so the process can exit. */
+export function closeShared() {
   fast?.disconnect();
   fast = undefined;
+  transport?.close();
+  transport = undefined;
 }
 
 /** Separate key space per environment (tests use "test", so a running dev worker never takes their jobs). */
@@ -111,7 +114,8 @@ export function audit(tx: Tx, tenantId: string, actorId: string | null, action: 
 
 let transport: ReturnType<typeof nodemailer.createTransport> | undefined;
 export function mailer() {
-  transport ??= nodemailer.createTransport(process.env.SMTP_URL ?? 'smtp://localhost:1025');
+  // Pooled: reusing SMTP connections skips a TCP + EHLO handshake per message.
+  transport ??= nodemailer.createTransport({ url: process.env.SMTP_URL ?? 'smtp://localhost:1025', pool: true, maxConnections: Number(process.env.SMTP_POOL ?? 5) });
   return transport;
 }
 export const MAIL_FROM = process.env.MAIL_FROM ?? 'RelayCRM <no-reply@relaycrm.local>';

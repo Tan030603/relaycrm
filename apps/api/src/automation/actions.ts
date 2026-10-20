@@ -17,6 +17,8 @@ export interface RunContext {
   signal: AbortSignal;
   /** Set for database-only actions: run inside the caller's transaction (with the step bookkeeping). */
   tx?: Tx;
+  /** Set for external actions: database writes to commit with the step's result instead of in a transaction of their own. */
+  defer?: ((tx: Tx) => Promise<unknown>)[];
 }
 
 /** Validation errors, 4xx, bad addresses: retrying cannot help, so fail the run now. */
@@ -86,9 +88,10 @@ const sendEmail: ActionHandler<Params<'send_email'>> = {
 
     const dealId = str(get(ctx.payload, 'deal.id'));
     const contactId = str(get(ctx.payload, 'contact.id'));
-    await ctx.db.withTenant(ctx.tenantId, (tx) =>
-      tx.activity.create({ data: { tenantId: ctx.tenantId, type: 'email', dealId, contactId, note: `Rule “${ctx.ruleName}” emailed ${to}: ${subject}` } }),
-    );
+    const logActivity = (tx: Tx) =>
+      tx.activity.create({ data: { tenantId: ctx.tenantId, type: 'email', dealId, contactId, note: `Rule “${ctx.ruleName}” emailed ${to}: ${subject}` } });
+    if (ctx.defer) ctx.defer.push(logActivity);
+    else await ctx.db.withTenant(ctx.tenantId, logActivity);
     return { to, subject, messageId };
   },
 };

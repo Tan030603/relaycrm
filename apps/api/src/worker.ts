@@ -10,7 +10,7 @@ import { Action, evaluate, Group } from './automation/engine';
 import { dealPayload } from './automation/payloads';
 import { Db, Tx } from './db';
 import type { Prisma } from './generated/prisma/client';
-import { QUEUES, QUEUE_PREFIX, emit, log, makeQueue, queueConnection, redisOptions, rulesCacheKey } from './infra';
+import { QUEUES, QUEUE_PREFIX, closeShared, emit, log, makeQueue, queueConnection, redisOptions, rulesCacheKey } from './infra';
 
 export const MAX_CHAIN_DEPTH = 3; // rule A → B → A stops here
 export const MAX_RULES_PER_EVENT = 20; // fan-out guard
@@ -199,83 +199,98 @@ export function createWorker(opts: { relayIntervalMs?: number; schedule?: boolea
   }
 
   // ---- 3. Actions: execute a run step by step -----------------------------------
+  // Two transactions for a typical run, not one per step: every commit is a WAL flush and
+  // every round trip holds a pooled connection (docs/benchmarks.md section 9). One
+  // transaction walks the actions: database-only ones run inside it, and an external one
+  // (email, webhook) ends it by marking its step running. The send happens with no
+  // transaction open; the next transaction records its result and carries on.
   async function executeRun(job: Job<RunJob>) {
     const { runId, tenantId } = job.data;
     const isFinal = (err: unknown) => err instanceof NonRetryableError || job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
+    type Todo = { action: Action; i: number };
+    let run: (Prisma.AutomationRunGetPayload<{ include: { steps: true } }>) | undefined;
+    let rule!: RuleRow;
+    let todo: Todo[] = [];
+    let next = 0; // index into todo
+    let current: Todo | undefined; // step executing now, for the failure record
+    let sent: { i: number; output: unknown; defer: ((tx: Tx) => Promise<unknown>)[] } | undefined; // external step done, not yet committed
 
-    // Few transactions per run: every round trip holds a pooled connection, and that,
-    // not CPU, is what limits throughput (docs/benchmarks.md section 9).
-    // 1. Load the run and mark it running in one transaction.
-    const run = await db.withTenant(tenantId, async (tx) => {
-      const r = await tx.automationRun.findFirst({ where: { id: runId, tenantId }, include: { steps: true } });
-      if (!r || r.status === 'succeeded' || r.status === 'skipped') return null;
-      await tx.automationRun.update({
-        where: { id_createdAt: { id: runId, createdAt: r.createdAt } },
-        data: { status: 'running', startedAt: r.startedAt ?? new Date(), attempt: { increment: 1 }, error: null },
-      });
-      return r;
-    });
-    if (!run) return;
-    const rule = run.ruleSnapshot as unknown as RuleRow;
-    const runKey = { id: runId, createdAt: run.createdAt }; // composite key: prunes to one partition
-    const stepKey = (actionIndex: number) => ({ runId_actionIndex_runCreatedAt: { runId, actionIndex, runCreatedAt: run.createdAt } });
-    const todo = rule.actions.map((action, i) => ({ action, i })).filter(({ i }) => run.steps.find((s) => s.actionIndex === i)?.status !== 'succeeded');
-
-    const stepRunning = (tx: Tx, i: number, action: Action) =>
+    const stepKey = (i: number) => ({ runId_actionIndex_runCreatedAt: { runId, actionIndex: i, runCreatedAt: run!.createdAt } });
+    const runKey = () => ({ id_createdAt: { id: runId, createdAt: run!.createdAt } }); // composite key: prunes to one partition
+    const stepUpsert = (tx: Tx, { action, i }: Todo, status: 'running' | 'succeeded', output?: unknown) =>
       tx.automationRunStep.upsert({
         where: stepKey(i),
-        create: { tenantId, runId, runCreatedAt: run.createdAt, actionIndex: i, actionType: action.type, status: 'running', input: action.params as Prisma.InputJsonValue },
-        update: { status: 'running', error: null, startedAt: new Date(), finishedAt: null, tries: { increment: 1 } },
+        create: { tenantId, runId, runCreatedAt: run!.createdAt, actionIndex: i, actionType: action.type, status, input: action.params as Prisma.InputJsonValue, output: output as Prisma.InputJsonValue, finishedAt: status === 'succeeded' ? new Date() : null },
+        update: { status, error: null, output: output as Prisma.InputJsonValue, startedAt: new Date(), finishedAt: status === 'succeeded' ? new Date() : null, tries: { increment: 1 } },
       });
-    const stepDone = async (tx: Tx, i: number, output: unknown, last: boolean) => {
-      await tx.automationRunStep.update({ where: stepKey(i), data: { status: 'succeeded', output: output as Prisma.InputJsonValue, finishedAt: new Date() } });
-      if (last) await tx.automationRun.update({ where: { id_createdAt: runKey }, data: { status: 'succeeded', finishedAt: new Date() } });
+    const recordSent = async (tx: Tx) => {
+      if (!sent) return;
+      await tx.automationRunStep.update({ where: stepKey(sent.i), data: { status: 'succeeded', output: sent.output as Prisma.InputJsonValue, finishedAt: new Date() } });
+      for (const write of sent.defer) await write(tx);
     };
 
     try {
-      if (!todo.length) await db.withTenant(tenantId, (tx) => tx.automationRun.update({ where: { id_createdAt: runKey }, data: { status: 'succeeded', finishedAt: new Date() } }));
-      for (const [n, { action, i }] of todo.entries()) {
-        const last = n === todo.length - 1;
-        const ctx = { db, tenantId, runId, ruleId: rule.id, ruleName: rule.name, actionIndex: i, payload: run.payload };
-        try {
-          if (action.type === 'create_task') {
-            // 2a. Database-only action: step bookkeeping and the effect commit together.
-            await db.withTenant(tenantId, async (tx) => {
-              await stepRunning(tx, i, action);
-              const output = await traced(`action ${action.type}`, currentTraceparent(), { 'relaycrm.run_id': runId }, () => runAction({ ...ctx, tx }, action));
-              await stepDone(tx, i, output, last);
-            });
-          } else {
-            // 2b. External side effect (email, webhook): never inside an open transaction.
-            await db.withTenant(tenantId, (tx) => stepRunning(tx, i, action));
-            const output = await traced(`action ${action.type}`, currentTraceparent(), { 'relaycrm.run_id': runId }, () => runAction(ctx, action));
-            await db.withTenant(tenantId, (tx) => stepDone(tx, i, output, last));
+      for (;;) {
+        const external = await db.withTenant(tenantId, async (tx): Promise<Todo | null> => {
+          if (!run) {
+            const r = await tx.automationRun.findFirst({ where: { id: runId, tenantId }, include: { steps: true } });
+            if (!r || r.status === 'succeeded' || r.status === 'skipped') return null;
+            run = r;
+            rule = r.ruleSnapshot as unknown as RuleRow;
+            todo = rule.actions.map((action, i) => ({ action, i })).filter(({ i }) => r.steps.find((s) => s.actionIndex === i)?.status !== 'succeeded');
+            await tx.automationRun.update({ where: runKey(), data: { status: 'running', startedAt: r.startedAt ?? new Date(), attempt: { increment: 1 }, error: null } });
           }
-        } catch (err) {
-          const final = isFinal(err);
-          await db.withTenant(tenantId, async (tx) => {
-            const step = await tx.automationRunStep.upsert({
-              where: stepKey(i),
-              create: { tenantId, runId, runCreatedAt: run.createdAt, actionIndex: i, actionType: action.type, status: 'failed', input: action.params as Prisma.InputJsonValue, error: errMsg(err), finishedAt: new Date() },
-              update: { status: 'failed', error: errMsg(err), finishedAt: new Date() },
-            });
-            const entry = { try: step.tries, error: errMsg(err), at: new Date().toISOString(), ...(final ? { deadLettered: true } : { retryInMs: BACKOFF_MS[job.attemptsMade] }) };
-            await tx.$executeRaw`UPDATE automation_run_steps SET history = history || ${JSON.stringify([entry])}::jsonb WHERE id = ${step.id}::uuid AND run_created_at = ${run.createdAt}`;
-          });
-          throw err;
-        }
+          await recordSent(tx);
+          while (next < todo.length) {
+            current = todo[next++];
+            if (current.action.type !== 'create_task') {
+              await stepUpsert(tx, current, 'running');
+              return current;
+            }
+            // Database-only: the effect and its step commit together ('running' would never be visible).
+            const output = await traced(`action ${current.action.type}`, currentTraceparent(), { 'relaycrm.run_id': runId }, () =>
+              runAction({ ...ctx(current!), tx }, current!.action),
+            );
+            await stepUpsert(tx, current, 'succeeded', output);
+          }
+          current = undefined;
+          await tx.automationRun.update({ where: runKey(), data: { status: 'succeeded', finishedAt: new Date() } });
+          return null;
+        });
+        sent = undefined; // committed
+        if (!external) break;
+        const defer: ((tx: Tx) => Promise<unknown>)[] = [];
+        const output = await traced(`action ${external.action.type}`, currentTraceparent(), { 'relaycrm.run_id': runId }, () => runAction({ ...ctx(external), defer }, external.action));
+        sent = { i: external.i, output, defer };
+        current = undefined;
       }
-      runsTotal.inc({ status: 'succeeded' });
-      log.debug({ run_id: runId, tenant_id: tenantId, rule_id: rule.id }, 'run succeeded');
+      if (run) {
+        runsTotal.inc({ status: 'succeeded' });
+        log.debug({ run_id: runId, tenant_id: tenantId, rule_id: rule.id }, 'run succeeded');
+      }
     } catch (err) {
+      if (!run) throw err; // failed before the run was read: plain job retry
       const final = isFinal(err);
-      await db.withTenant(tenantId, (tx) =>
-        tx.automationRun.update({
-          where: { id_createdAt: runKey },
+      const failed = current;
+      await db.withTenant(tenantId, async (tx) => {
+        // A send that succeeded but whose result was in the rolled-back transaction: keep it, so a retry does not repeat it.
+        await recordSent(tx);
+        if (failed) {
+          const { action, i } = failed;
+          const step = await tx.automationRunStep.upsert({
+            where: stepKey(i),
+            create: { tenantId, runId, runCreatedAt: run!.createdAt, actionIndex: i, actionType: action.type, status: 'failed', input: action.params as Prisma.InputJsonValue, error: errMsg(err), finishedAt: new Date() },
+            update: { status: 'failed', error: errMsg(err), finishedAt: new Date() },
+          });
+          const entry = { try: step.tries, error: errMsg(err), at: new Date().toISOString(), ...(final ? { deadLettered: true } : { retryInMs: BACKOFF_MS[job.attemptsMade] }) };
+          await tx.$executeRaw`UPDATE automation_run_steps SET history = history || ${JSON.stringify([entry])}::jsonb WHERE id = ${step.id}::uuid AND run_created_at = ${run!.createdAt}`;
+        }
+        await tx.automationRun.update({
+          where: runKey(),
           // queued + error = "retrying" in the UI.
           data: final ? { status: 'failed', error: errMsg(err), finishedAt: new Date() } : { status: 'queued', error: errMsg(err) },
-        }),
-      );
+        });
+      });
       log.warn({ run_id: runId, tenant_id: tenantId, final, err: errMsg(err) }, 'run step failed');
       if (final) {
         runsTotal.inc({ status: 'failed' });
@@ -283,6 +298,10 @@ export function createWorker(opts: { relayIntervalMs?: number; schedule?: boolea
         throw new UnrecoverableError(errMsg(err));
       }
       throw err;
+    }
+
+    function ctx({ i }: Todo) {
+      return { db, tenantId, runId, ruleId: rule.id, ruleName: rule.name, actionIndex: i, payload: run!.payload };
     }
   }
 
@@ -393,6 +412,7 @@ export function createWorker(opts: { relayIntervalMs?: number; schedule?: boolea
     await Promise.all(workers.map((w) => w.close()));
     await Promise.all([eventsQ.close(), actionsQ.close(), dlq.close(), maintenanceQ.close()]);
     conn.disconnect();
+    closeShared();
     await db.$disconnect();
   }
 

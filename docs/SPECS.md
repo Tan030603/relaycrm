@@ -527,7 +527,7 @@ Deviations from the design, on purpose:
 - Run partitions key on the event's `occurred_at` (not insert time), so a redelivered event lands in the same partition and the unique idempotency key still dedupes. Steps have no FK to runs (partitions of both are dropped together).
 - Per-tenant worker fairness is a Redis lease set (max N concurrent runs per tenant, excess re-delayed, leases expire after a crash), not sharded queues.
 
-Measured against the §8.1 targets ([benchmarks](benchmarks.md)): every latency target met at demo and growth data sizes (50M contacts, 5,000 tenants); ingestion at 1,000 events/s met; **processing at 1,000 runs/s not met on one laptop (248 runs/s)**, with the bottleneck identified (interactive-transaction round trips per run). Not built: a separate store for run history (stage 5 option; partitions cover retention today), Redis Cluster (Sentinel covers HA), automated tenant moves between cells, and cross-cell users.
+Measured against the §8.1 targets ([benchmarks](benchmarks.md)): every latency target met at demo and growth data sizes (50M contacts, 5,000 tenants); ingestion at 1,000 events/s met; **processing at 1,000 runs/s not met on one laptop (~225 runs/s)**: measured cost is ~16 ms of Postgres CPU per run, so the target needs ~16 database cores or several tenant cells. Not built: a separate store for run history (stage 5 option; partitions cover retention today), Redis Cluster (Sentinel covers HA), automated tenant moves between cells, and cross-cell users.
 - Rules cache: Redis key per (tenant, trigger), 60 s TTL, deleted on every rule change (no pub/sub needed because all replicas read the same key).
 
 ---
