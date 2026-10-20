@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: relaycrm-config
+data:
+  NODE_ENV: production
+  # Connection budget: api replicas (max 10) x 10 + worker replicas (max 20) x 5 must stay
+  # under PgBouncer's pool; PgBouncer runs in transaction mode (RLS context is tx-local).
+  DB_POOL_MAX: "10"
+  WORKER_CONCURRENCY: "10"
+  TENANT_CONCURRENCY: "5"
+  TENANT_RATE_LIMIT: "100"
+  APP_URL: https://app.relaycrm.example
+  REDIS_ADDRESS: redis:6379 # host:port for the KEDA redis scaler
+---
+# Example only. Create the real one from your secret manager:
+#   kubectl -n relaycrm create secret generic relaycrm-secrets --from-literal=DATABASE_URL=... ...
+apiVersion: v1
+kind: Secret
+metadata:
+  name: relaycrm-secrets
+type: Opaque
+stringData:
+  DATABASE_URL: postgresql://app_user:CHANGE_ME@pgbouncer:6432/relaycrm   # pods → PgBouncer
+  UPSTREAM_DATABASE_URL: postgresql://app_user:CHANGE_ME@postgres:5432/relaycrm   # PgBouncer → Postgres
+  MIGRATION_DATABASE_URL: postgresql://relaycrm:CHANGE_ME@postgres:5432/relaycrm
+  REDIS_URL: redis://redis:6379
+  SMTP_URL: smtp://user:CHANGE_ME@smtp.example:587
+  JWT_SECRET: CHANGE_ME_TO_A_LONG_RANDOM_STRING_32_CHARS_MIN
+  WEBHOOK_SECRET: CHANGE_ME
+  ANTHROPIC_API_KEY: ""

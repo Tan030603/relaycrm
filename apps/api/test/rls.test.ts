@@ -99,3 +99,30 @@ test('tenant context ends with the transaction (safe with pooled connections)', 
   const { rows } = await app.query('SELECT count(*)::int AS n FROM contacts');
   assert.equal(rows[0].n, 0);
 });
+
+test('every table with a tenant_id column has RLS enabled, forced and a tenant policy', async () => {
+  const { rows } = await owner.query<{ table: string; partition: boolean; enabled: boolean; forced: boolean; policy: boolean }>(`
+    SELECT c.relname AS table, c.relispartition AS partition, c.relrowsecurity AS enabled, c.relforcerowsecurity AS forced,
+           EXISTS (SELECT 1 FROM pg_policies p WHERE p.tablename = c.relname AND p.policyname = 'tenant_isolation') AS policy
+      FROM pg_class c JOIN pg_attribute a ON a.attrelid = c.oid
+     WHERE c.relkind IN ('r', 'p') AND c.relnamespace = 'public'::regnamespace AND a.attname = 'tenant_id' AND NOT a.attisdropped
+       AND c.relname NOT IN ('refresh_tokens', 'tenant_shards')`); // global directory tables, by design
+  assert.ok(rows.filter((r) => !r.partition).length >= 12, `found ${rows.length} tenant tables`);
+  for (const r of rows) {
+    // Parents carry the policy; monthly partitions are RLS-enabled with no policy, so
+    // querying one directly (bypassing the parent) returns nothing.
+    assert.deepEqual([r.table, r.enabled, r.forced, r.partition || r.policy], [r.table, true, true, true]);
+  }
+});
+
+test('querying a history partition directly bypasses nothing', async () => {
+  const { rows } = await owner.query<{ name: string }>(`SELECT c.relname AS name FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid JOIN pg_class p ON p.oid = i.inhparent WHERE p.relname = 'automation_runs' LIMIT 1`);
+  assert.ok(rows.length, 'automation_runs is partitioned');
+  const r = await inTenant(app, a.tenantId, () => app.query(`SELECT count(*)::int AS n FROM ${rows[0].name}`));
+  assert.equal(r.rows[0].n, 0);
+});
+
+test('app_user cannot read the outbox across tenants directly', async () => {
+  const { rows } = await app.query('SELECT count(*)::int AS n FROM domain_events');
+  assert.equal(rows[0].n, 0, 'no tenant context → zero rows, even for the outbox');
+});

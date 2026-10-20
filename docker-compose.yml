@@ -1,5 +1,30 @@
 name: relaycrm
 
+# Whole stack: docker compose up --build
+#   web      http://localhost:8080   (Vue SPA + /api proxy)
+#   api      http://localhost:4000   (REST, /graphql, /metrics)
+#   mailpit  http://localhost:8025   (every email the rules send lands here)
+#   with --profile observability: prometheus :9090 (alert rules), grafana :3300 (dashboard), jaeger :16686 (traces)
+
+x-app-env: &app-env
+  # Many workers: APP_DATABASE_URL=postgresql://app_user:app_user_dev@pgbouncer:6432/relaycrm docker compose --profile scale up --scale worker=16
+  DATABASE_URL: ${APP_DATABASE_URL:-postgresql://app_user:app_user_dev@postgres:5432/relaycrm}
+  DB_POOL_MAX: "10"
+  # Jobs in flight per worker. Email/webhook steps hold no DB connection while waiting on
+  # the network, so this can exceed DB_POOL_MAX.
+  WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-10}
+  REDIS_URL: redis://redis:6379
+  SMTP_URL: smtp://mailpit:1025
+  JWT_SECRET: dev-only-change-me-to-a-long-random-string
+  APP_URL: http://localhost:8080
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  # Tracing: OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 docker compose --profile observability up
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+  # Read replica: DATABASE_REPLICA_URL=postgresql://app_user:app_user_dev@postgres-replica:5432/relaycrm docker compose --profile replica up
+  DATABASE_REPLICA_URL: ${DATABASE_REPLICA_URL:-}
+  # Redis HA: REDIS_SENTINELS=redis-sentinel-1:26379,redis-sentinel-2:26379,redis-sentinel-3:26379 docker compose --profile ha up
+  REDIS_SENTINELS: ${REDIS_SENTINELS:-}
+
 services:
   postgres:
     image: postgres:18-alpine
@@ -12,20 +37,112 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql
       - ./infra/docker/postgres-init.sql:/docker-entrypoint-initdb.d/01-app-user.sql:ro
+      - ./infra/docker/postgres-replication.sh:/docker-entrypoint-initdb.d/02-replication.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U relaycrm -d relaycrm"]
       interval: 2s
       timeout: 3s
       retries: 20
 
-  # One-shot: applies migrations as the table owner, then exits.
+  # Connection pooler (transaction mode) for many API/worker replicas, profile "scale".
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.24.1-p1
+    profiles: [scale]
+    environment:
+      DATABASE_URL: postgresql://app_user:app_user_dev@postgres:5432/relaycrm
+      LISTEN_PORT: "6432"
+      POOL_MODE: transaction
+      AUTH_TYPE: scram-sha-256
+      MAX_CLIENT_CONN: "2000"
+      DEFAULT_POOL_SIZE: "60"
+      MAX_PREPARED_STATEMENTS: "200"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Hot-standby streaming replica of postgres (read-only). Dashboards, run log and
+  # GraphQL read from it when DATABASE_REPLICA_URL is set.
+  postgres-replica:
+    image: postgres:18-alpine
+    profiles: [replica]
+    entrypoint: ["/replica-entrypoint.sh"]
+    environment:
+      PGPASSWORD: replicator_dev
+    volumes:
+      - pgreplica:/var/lib/postgresql
+      - ./infra/docker/replica-entrypoint.sh:/replica-entrypoint.sh:ro
+    ports:
+      - "5441:5432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  redis:
+    image: redis:8-alpine
+    # Queues must not be evicted under memory pressure.
+    command: ["redis-server", "--maxmemory-policy", "noeviction", "--appendonly", "yes", "--replica-announce-ip", "redis"]
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      retries: 20
+
+  # Redis high availability (profile "ha"): a streaming replica plus 3 Sentinels that
+  # promote it if the primary dies; the app follows via REDIS_SENTINELS.
+  redis-replica:
+    image: redis:8-alpine
+    profiles: [ha]
+    command: ["redis-server", "--replicaof", "redis", "6379", "--maxmemory-policy", "noeviction", "--appendonly", "yes", "--replica-announce-ip", "redis-replica"]
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis-sentinel-1:
+    image: redis:8-alpine
+    profiles: [ha]
+    command:
+      - sh
+      - -c
+      - |
+        printf 'port 26379\nsentinel resolve-hostnames yes\nsentinel announce-hostnames yes\nsentinel monitor relaycrm redis 6379 2\nsentinel down-after-milliseconds relaycrm 3000\nsentinel failover-timeout relaycrm 10000\n' > /tmp/sentinel.conf
+        exec redis-server /tmp/sentinel.conf --sentinel
+    depends_on: [redis, redis-replica]
+
+  redis-sentinel-2:
+    image: redis:8-alpine
+    profiles: [ha]
+    command:
+      - sh
+      - -c
+      - |
+        printf 'port 26379\nsentinel resolve-hostnames yes\nsentinel announce-hostnames yes\nsentinel monitor relaycrm redis 6379 2\nsentinel down-after-milliseconds relaycrm 3000\nsentinel failover-timeout relaycrm 10000\n' > /tmp/sentinel.conf
+        exec redis-server /tmp/sentinel.conf --sentinel
+    depends_on: [redis, redis-replica]
+
+  redis-sentinel-3:
+    image: redis:8-alpine
+    profiles: [ha]
+    command:
+      - sh
+      - -c
+      - |
+        printf 'port 26379\nsentinel resolve-hostnames yes\nsentinel announce-hostnames yes\nsentinel monitor relaycrm redis 6379 2\nsentinel down-after-milliseconds relaycrm 3000\nsentinel failover-timeout relaycrm 10000\n' > /tmp/sentinel.conf
+        exec redis-server /tmp/sentinel.conf --sentinel
+    depends_on: [redis, redis-replica]
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  # One-shot, same image: applies migrations as the table owner, then exits.
   migrate:
     build:
       context: .
       dockerfile: infra/docker/api.Dockerfile
-      target: build
-    working_dir: /app/apps/api
-    command: ["node_modules/.bin/prisma", "migrate", "deploy"]
+    command: ["node", "node_modules/prisma/build/index.js", "migrate", "deploy"]
     environment:
       MIGRATION_DATABASE_URL: postgresql://relaycrm:relaycrm@postgres:5432/relaycrm
     depends_on:
@@ -37,15 +154,70 @@ services:
       context: .
       dockerfile: infra/docker/api.Dockerfile
     environment:
-      DATABASE_URL: postgresql://app_user:app_user_dev@postgres:5432/relaycrm
-      DB_POOL_MAX: "10"
-      JWT_SECRET: dev-only-change-me-to-a-long-random-string
+      <<: *app-env
       PORT: "4000"
     ports:
       - "4000:4000"
     depends_on:
       migrate:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  # Same image, second entrypoint: outbox relay + queue consumers + scheduler.
+  # Scale with: docker compose up --scale worker=3
+  worker:
+    build:
+      context: .
+      dockerfile: infra/docker/api.Dockerfile
+    command: ["node", "dist/src/worker.js"]
+    environment:
+      <<: *app-env
+      SERVICE_NAME: worker
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api
+
+  # Optional: docker compose --profile observability up  →  http://localhost:9090
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    profiles: [observability]
+    volumes:
+      - ./infra/prometheus:/etc/prometheus:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    profiles: [observability]
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/provisioning/dashboards/relaycrm.json
+    volumes:
+      - ./infra/grafana:/etc/grafana/provisioning:ro
+    ports:
+      - "3300:3000"
+
+  # Traces: API request → outbox event → queue → worker run → action, one trace.
+  jaeger:
+    image: jaegertracing/jaeger:2.11.0
+    profiles: [observability]
+    ports:
+      - "16686:16686"
+      - "4318:4318" # OTLP/HTTP, for processes running outside Compose
 
 volumes:
   pgdata:
+  pgreplica:

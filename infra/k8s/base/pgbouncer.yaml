@@ -1,0 +1,40 @@
+# Connection pooler in transaction mode (SPECS 8.3 stage 1). Every API and worker pod
+# opens its pool against PgBouncer; PgBouncer keeps a small, fixed set of server
+# connections. Safe with RLS because app.tenant_id is set per transaction (set_config(..., true)).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer
+  labels: { app: pgbouncer }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pgbouncer } }
+  template:
+    metadata:
+      labels: { app: pgbouncer }
+    spec:
+      containers:
+        - name: pgbouncer
+          image: edoburu/pgbouncer:v1.24.1-p1
+          ports: [{ containerPort: 6432 }]
+          env:
+            - name: DATABASE_URL # upstream Postgres, as app_user
+              valueFrom: { secretKeyRef: { name: relaycrm-secrets, key: UPSTREAM_DATABASE_URL } }
+            - { name: LISTEN_PORT, value: "6432" }
+            - { name: POOL_MODE, value: transaction }
+            - { name: AUTH_TYPE, value: scram-sha-256 }
+            - { name: MAX_CLIENT_CONN, value: "2000" }   # all pods' pools together
+            - { name: DEFAULT_POOL_SIZE, value: "40" }   # real Postgres connections
+            - { name: MAX_PREPARED_STATEMENTS, value: "200" }
+          readinessProbe: { tcpSocket: { port: 6432 }, periodSeconds: 5 }
+          resources:
+            requests: { cpu: 100m, memory: 32Mi }
+            limits: { memory: 128Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer
+spec:
+  selector: { app: pgbouncer }
+  ports: [{ port: 6432, targetPort: 6432 }]

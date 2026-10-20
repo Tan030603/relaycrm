@@ -1,0 +1,21 @@
+# Alert rules from SPECS §10. Route them with Alertmanager (not included in Compose).
+groups:
+  - name: relaycrm
+    rules:
+      - alert: QueueBacklog
+        expr: max by (queue) (relaycrm_queue_oldest_job_age_seconds{queue!="dlq"}) > 60 # the DLQ parks jobs on purpose
+        for: 2m
+        annotations: { summary: "Oldest waiting job in {{ $labels.queue }} is older than 60 s: scale workers" }
+      - alert: DeadLetterQueueGrowing
+        expr: increase(relaycrm_runs_total{status="failed"}[15m]) > 0
+        annotations: { summary: "Automation runs are landing in the dead-letter queue" }
+      - alert: ApiErrorRate
+        expr: |
+          sum(rate(relaycrm_http_request_duration_seconds_count{status=~"5.."}[5m]))
+            / sum(rate(relaycrm_http_request_duration_seconds_count[5m])) > 0.02
+        for: 5m
+        annotations: { summary: "API 5xx rate above 2%" }
+      - alert: ApiLatencyP95
+        expr: histogram_quantile(0.95, sum by (le) (rate(relaycrm_http_request_duration_seconds_bucket[5m]))) > 0.3
+        for: 10m
+        annotations: { summary: "API p95 latency above 300 ms" }

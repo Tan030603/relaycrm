@@ -1,0 +1,61 @@
+# Same image as the API, second entrypoint. Scales on queue depth, not CPU.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  labels: { app: worker }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: worker } }
+  template:
+    metadata:
+      labels: { app: worker }
+      annotations: { prometheus.io/scrape: "true", prometheus.io/port: "9464", prometheus.io/path: /metrics }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 1000 }
+      # SIGTERM → stop polling, finish in-flight jobs (worker.close()), then exit.
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: worker
+          image: relaycrm-api
+          command: ["node", "dist/src/worker.js"]
+          env:
+            - { name: SERVICE_NAME, value: worker }
+            - { name: DB_POOL_MAX, value: "5" }
+          envFrom: [{ configMapRef: { name: relaycrm-config } }, { secretRef: { name: relaycrm-secrets } }]
+          ports: [{ containerPort: 9464, name: metrics }]
+          resources:
+            requests: { cpu: 200m, memory: 256Mi }
+            limits: { memory: 512Mi }
+          livenessProbe: { httpGet: { path: /health, port: 9464 }, periodSeconds: 20 }
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true }
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: worker
+spec:
+  scaleTargetRef: { name: worker }
+  minReplicaCount: 1
+  maxReplicaCount: 20
+  cooldownPeriod: 120
+  triggers:
+    # BullMQ keeps waiting jobs in the list bull:<queue>:wait.
+    - type: redis
+      metadata:
+        addressFromEnv: REDIS_ADDRESS
+        listName: bull:actions:wait
+        listLength: "50"
+    - type: redis
+      metadata:
+        addressFromEnv: REDIS_ADDRESS
+        listName: bull:events:wait
+        listLength: "200"
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: worker
+spec:
+  maxUnavailable: 1
+  selector: { matchLabels: { app: worker } }

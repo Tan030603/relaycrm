@@ -1,0 +1,19 @@
+# Run before rolling out a new image (expand/contract migrations keep old pods working).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: relaycrm-migrate
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext: { runAsNonRoot: true, runAsUser: 1000 }
+      containers:
+        - name: migrate
+          image: relaycrm-api
+          command: ["node", "node_modules/prisma/build/index.js", "migrate", "deploy"]
+          env:
+            - name: MIGRATION_DATABASE_URL
+              valueFrom: { secretKeyRef: { name: relaycrm-secrets, key: MIGRATION_DATABASE_URL } }
