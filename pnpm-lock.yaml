@@ -14,16 +14,16 @@ importers:
     devDependencies:
       '@eslint/js':
         specifier: 10.0.1
-        version: 10.0.1(eslint@10.12.0(jiti@2.7.0))
+        version: 10.0.1(eslint@10.13.0(jiti@2.7.0))
       eslint:
-        specifier: 10.12.0
-        version: 10.12.0(jiti@2.7.0)
+        specifier: 10.13.0
+        version: 10.13.0(jiti@2.7.0)
       eslint-plugin-vue:
         specifier: 10.11.1
-        version: 10.11.1(@typescript-eslint/parser@8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3))(eslint@10.12.0(jiti@2.7.0))(vue-eslint-parser@10.4.1(eslint@10.12.0(jiti@2.7.0)))
+        version: 10.11.1(@typescript-eslint/parser@8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3))(eslint@10.13.0(jiti@2.7.0))(vue-eslint-parser@10.4.1(eslint@10.13.0(jiti@2.7.0)))
       typescript-eslint:
         specifier: 8.71.2
-        version: 8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)
+        version: 8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3)
 
   apps/api:
     dependencies:
@@ -49,8 +49,8 @@ importers:
         specifier: 0.223.0
         version: 0.223.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation-express':
-        specifier: 0.71.0
-        version: 0.71.0(@opentelemetry/api@1.9.1)
+        specifier: 0.71.1
+        version: 0.71.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation-http':
         specifier: 0.223.0
         version: 0.223.0(@opentelemetry/api@1.9.1)
@@ -58,20 +58,20 @@ importers:
         specifier: 0.71.0
         version: 0.71.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation-pg':
-        specifier: 0.75.0
-        version: 0.75.0(@opentelemetry/api@1.9.1)
+        specifier: 0.76.0
+        version: 0.76.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-node':
         specifier: 0.223.0
         version: 0.223.0(@opentelemetry/api@1.9.1)
       '@prisma/adapter-pg':
-        specifier: 7.10.0
-        version: 7.10.0
+        specifier: 7.10.1
+        version: 7.10.1
       '@prisma/client':
-        specifier: 7.10.0
-        version: 7.10.0(prisma@7.10.0(@types/node@24.19.2)(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(typescript@5.9.3)
+        specifier: 7.10.1
+        version: 7.10.1(prisma@7.10.1(@types/node@24.19.2)(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(typescript@5.9.3)
       bullmq:
-        specifier: 6.3.15
-        version: 6.3.15(ioredis@6.0.0)(pg@8.23.1)
+        specifier: 6.3.17
+        version: 6.3.17(ioredis@6.0.0)(pg@8.23.1)
       graphql:
         specifier: 17.0.2
         version: 17.0.2
@@ -79,14 +79,14 @@ importers:
         specifier: 6.0.0
         version: 6.0.0
       nodemailer:
-        specifier: 10.1.0
-        version: 10.1.0
+        specifier: 10.1.7
+        version: 10.1.7
       pino:
         specifier: 10.4.0
         version: 10.4.0
       prisma:
-        specifier: 7.10.0
-        version: 7.10.0(@types/node@24.19.2)(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+        specifier: 7.10.1
+        version: 7.10.1(@types/node@24.19.2)(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
       prom-client:
         specifier: 15.1.3
         version: 15.1.3
@@ -101,8 +101,8 @@ importers:
         version: 4.6.7
     devDependencies:
       '@types/express':
-        specifier: 5.0.3
-        version: 5.0.3
+        specifier: 5.0.6
+        version: 5.0.6
       '@types/node':
         specifier: 24.19.2
         version: 24.19.2
@@ -110,8 +110,8 @@ importers:
         specifier: 8.0.2
         version: 8.0.2
       '@types/pg':
-        specifier: 8.15.5
-        version: 8.15.5
+        specifier: 8.23.1
+        version: 8.23.1
       pg:
         specifier: 8.23.1
         version: 8.23.1
@@ -478,8 +478,8 @@ packages:
     peerDependencies:
       '@opentelemetry/api': ^1.0.0
 
-  '@opentelemetry/instrumentation-express@0.71.0':
-    resolution: {integrity: sha512-U/qhsPrcAHr5PxeoAsHng9fZWK/v+Fx+wvqOTj5kOTASarlv+/098UdE1dD4livq+dE/l50YXMKeORE1lsAHfA==}
+  '@opentelemetry/instrumentation-express@0.71.1':
+    resolution: {integrity: sha512-Pj2WHwSrYAGnEjl7zM4UtYbALgOLEwL0BTa4jNTGW8YGHOx6NpIOwqnD2pn2zJDH8lbiUsc+EI5Jzv3Rq4mbRg==}
     engines: {node: ^18.19.0 || >=20.6.0}
     peerDependencies:
       '@opentelemetry/api': ^1.3.0
@@ -496,8 +496,8 @@ packages:
     peerDependencies:
       '@opentelemetry/api': ^1.3.0
 
-  '@opentelemetry/instrumentation-pg@0.75.0':
-    resolution: {integrity: sha512-YleNiIjYYEmIsH5ECDpq15ybFFXgcjdVhnh2vG3ij2xAApBMhgysuKtl6jM/KAelTl6rKZnREhrteGYmGBIPYg==}
+  '@opentelemetry/instrumentation-pg@0.76.0':
+    resolution: {integrity: sha512-kcZqfqEMIDTW3SOgtwgR2uiefTalUaTDaLjFscuNuGU12zs5b70n3E09UuRUq2RFA+/yFKWkLkPRUYt2ytPE/Q==}
     engines: {node: ^18.19.0 || >=20.6.0}
     peerDependencies:
       '@opentelemetry/api': ^1.3.0
@@ -535,6 +535,7 @@ packages:
   '@opentelemetry/propagator-jaeger@2.12.0':
     resolution: {integrity: sha512-Kz2Vz+NILW7S1WtN4rV1wr76fMtT/RRWvAMFBc91uTIi2dDMXxrfBKNe2KH7yaCfFp1X0xfAuabzuFczvoPB6A==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Package no longer supported. See https://github.com/open-telemetry/opentelemetry-js/pull/7077
     peerDependencies:
       '@opentelemetry/api': '>=1.0.0 <1.10.0'
 
@@ -569,12 +570,14 @@ packages:
   '@opentelemetry/sdk-trace-base@2.12.0':
     resolution: {integrity: sha512-JOERgZCxRM06FEJ5kEWxlSRChah6MmXDx3KwCruqEv/iEyLkTokCSemf2y1w8oIHtfrr8EVTpzebq/31vn2Cpg==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Use @opentelemetry/sdk-trace package
     peerDependencies:
       '@opentelemetry/api': '>=1.3.0 <1.10.0'
 
   '@opentelemetry/sdk-trace-node@2.12.0':
     resolution: {integrity: sha512-9DufH1IlmQMoKAfot5y/FhTP1RnmhLb5K6eKmJO/bvzPjYwPAazoiAUbTZFdPbqxOXN0FEbhZx/e6SB1Og4jmg==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Use @opentelemetry/sdk-trace package
     peerDependencies:
       '@opentelemetry/api': '>=1.0.0 <1.10.0'
 
@@ -600,14 +603,14 @@ packages:
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
 
-  '@prisma/adapter-pg@7.10.0':
-    resolution: {integrity: sha512-N7nwSor0HO1Kz6xBv0TPAjAPysKK0fac6p4fVN3ensLOuzc/83Fgmln5k92eK/cvzqdkSR/2kkAqlbcdwVrwpw==}
+  '@prisma/adapter-pg@7.10.1':
+    resolution: {integrity: sha512-EP9ruPYHjKP80WZlb5qVaEXKgZjJieBFjAxcBtQnDAHD6+16UN4keVmBh6L/RUpuDQT2FQRbvKNgq5d4Ix+IkQ==}
 
-  '@prisma/client-runtime-utils@7.10.0':
-    resolution: {integrity: sha512-cnCy7lUV8/CctgKVEmqAbSLAmwqJdE/qAlqTBk/0NDk59zEb2cZ0M0M0E4vVPnqbSEYudRroQDvOWfUZH6RIfw==}
+  '@prisma/client-runtime-utils@7.10.1':
+    resolution: {integrity: sha512-AzoATVIgmO3lcZfM443+9SI7+cyLMW2+Psw4op8WQHpHvHCX//CKxv8fwhiL0yGWF8DjdQrFewxrZo5McBdB8g==}
 
-  '@prisma/client@7.10.0':
-    resolution: {integrity: sha512-Ubw/QS9JGIBSBUsyxAUQuK/Jcu0Tsva7le7QbLd91Kix9yJvYDdj5QkwgEbbZniH80dd+sziQcALPc+HnvQC8Q==}
+  '@prisma/client@7.10.1':
+    resolution: {integrity: sha512-5tgAbFGh//zVOC6WPNVgziOErJHYkUE+wmqCwbIyq6IrTXUYtv9y2iBFGh/Owo99Mx0+cr0j1FOrxkYBMuyhaQ==}
     engines: {node: ^20.19 || ^22.12 || >=24.0}
     peerDependencies:
       prisma: '*'
@@ -618,11 +621,11 @@ packages:
       typescript:
         optional: true
 
-  '@prisma/config@7.10.0':
-    resolution: {integrity: sha512-Rcg828gIRE3HOQ3pOATFjV5d/P0U9OIobxhd/IMxlfWjA4vru0eGwb0AIwFw0rmcLMVShohZYWPixVxkBHsxUA==}
+  '@prisma/config@7.10.1':
+    resolution: {integrity: sha512-+0swF5ELUa3P/9cIR26+gpYjjCbGE0qvEBZhV4zMDkYsrtHjZ884MQbOnWFWXj600N0sSJNnHbtBqe12yDngWg==}
 
-  '@prisma/debug@7.10.0':
-    resolution: {integrity: sha512-caygJKtltmRIgdJ3jRpkOr7yM4DW6zxo5uOmojKWFb3asnxWoRkQOwZmXBgD8FZp4htrX+nMpcWqDwzlQ1+Y4g==}
+  '@prisma/debug@7.10.1':
+    resolution: {integrity: sha512-eFCAkGZ13D/qPg48JBlG5IWi9cSBBOC7oG3abDPcAkYioDWlIjh0YJJLK2J7qo5S+xWWD8I6egAN/8KbCaiMCA==}
 
   '@prisma/debug@7.2.0':
     resolution: {integrity: sha512-YSGTiSlBAVJPzX4ONZmMotL+ozJwQjRmZweQNIq/ER0tQJKJynNkRB3kyvt37eOfsbMCXk3gnLF6J9OJ4QWftw==}
@@ -630,20 +633,20 @@ packages:
   '@prisma/dev@0.24.17':
     resolution: {integrity: sha512-UvdZzmpFwknnfreh6Jije84ekkYGPYEJhXG1tFzCsCfQyzJifrOo38eZc0qajzvaC6OLUOrN9ML5XfCnEZL9DA==}
 
-  '@prisma/driver-adapter-utils@7.10.0':
-    resolution: {integrity: sha512-u8zkcRLlaryO652T4qavBg0HmzNW5tSKdsCn6hc1PhWAp/J6k0vrxLuUs+b9o+HcjsK7Dfa01o4OFSn0frauJA==}
+  '@prisma/driver-adapter-utils@7.10.1':
+    resolution: {integrity: sha512-DJ4c6xvVnm3s9ZUyql9nCUicADSqyvH+CjXRCM9L6m5zJxCNmebCElG6X4irICq3rosBwlX+S19Dxq/4IrZk3A==}
 
-  '@prisma/engines-version@7.10.0-4.0edf323efd1d98336f3f0a68684b56f689b900d3':
-    resolution: {integrity: sha512-8OJ6RuZTZ06eFUOtBwxVmv8XMmOW6HWN5F+uxUbZkGxR0Bfab1dfAdXaHPmR5mb59E+fmUo8IOzXlbLY1SClbw==}
+  '@prisma/engines-version@8.1.0-1.d1b3f377ca835d73fd50954a5e22128b9ebdd6b8':
+    resolution: {integrity: sha512-XjXmwjN2NE340RpXoXv8ZF8aNAvr0FE+7gNfkKeW6vyjXs7F8uxvEbWQoVrhioXDQoIsnNmv7r+wxvzfdEZaWA==}
 
-  '@prisma/engines@7.10.0':
-    resolution: {integrity: sha512-KNumN6NHFwybvfdYzTee9pqwx5PvknpWAaHn6L5NsbrKdl+SQrsVZs9opKs6U6SAsvB26HDt3WybRjOhgoWOYQ==}
+  '@prisma/engines@7.10.1':
+    resolution: {integrity: sha512-R6/ghv1Bu36FhCdQLFof1pNtyoWoeDzJLYeTKjgqb4eGtOAJx7ZqJtcm4pzkahLfZ9rYz8AkmsMDwkyiYbXPCQ==}
 
-  '@prisma/fetch-engine@7.10.0':
-    resolution: {integrity: sha512-Zqyu8DY14t6W/xwmAxUYWCXtHrvQnSvT644EAZSsdM8NSmCS74vJJbBKdVsK3ucFpnUWkEpbO1a0CxJXrg130g==}
+  '@prisma/fetch-engine@7.10.1':
+    resolution: {integrity: sha512-qZezeaExLWG2ptbHOrMxdiWluKHgqEclTdJbvY6pk6+Wg7EiVkeq5U3cXz9ti8nd0bngNvsDgledLHVRg5LF1w==}
 
-  '@prisma/get-platform@7.10.0':
-    resolution: {integrity: sha512-0bra1LFYi8xNw0yqV62bHJNQk4BKleOngZiqPWIQc7a3+9q6rqsnqJ15BuepP8943PFMvtmgnP52juZsyYkA6w==}
+  '@prisma/get-platform@7.10.1':
+    resolution: {integrity: sha512-iVnghHne5vcaobBjPVCMEjh5r/1UCj394EIGTUclasFRatpR/MQwcM2veLv5kgoFSyYP54nch/lNFCQRYcDxvg==}
 
   '@prisma/get-platform@7.2.0':
     resolution: {integrity: sha512-k1V0l0Td1732EHpAfi2eySTezyllok9dXb6UQanajkJQzPUGi3vO2z7jdkz67SypFTdmbnyGYxvEvYZdZsMAVA==}
@@ -885,6 +888,9 @@ packages:
   '@types/d3-color@3.1.0':
     resolution: {integrity: sha512-HKuicPHJuvPgCD+np6Se9MQvS6OCbJmOjGvylzMJRlDwUXjKTTXs6Pwgk79O09Vj/ho3u1ofXnhFOaEWWPrlwA==}
 
+  '@types/d3-color@3.1.3':
+    resolution: {integrity: sha512-iO90scth9WAbmgv7ogoq57O9YpKmFBbmoEoCHDB2xMBY0+/KVrqAaCDyCE16dUspeOvIxFFRI+0sEtqDqy2b4A==}
+
   '@types/d3-delaunay@6.0.1':
     resolution: {integrity: sha512-tLxQ2sfT0p6sxdG75c6f/ekqxjyYR0+LwPrsO1mbC9YDBzPJhs2HbJJRrn8Ez1DBoHRo2yx7YEATI+8V1nGMnQ==}
 
@@ -912,6 +918,9 @@ packages:
   '@types/d3-time@3.0.0':
     resolution: {integrity: sha512-sZLCdHvBUcNby1cB6Fd3ZBrABbjz3v1Vm90nysCQ6Vt7vd6e/h9Lt7SiJUoEX0l4Dzc7P5llKyhqSi1ycSf1Hg==}
 
+  '@types/d3-time@3.0.4':
+    resolution: {integrity: sha512-yuzZug1nkAAaBlBBikKZTgzCeA+k1uy4ZFwWANOfKw5z5LRhV0gNA7gNkKm7HoK+HRN0wX3EkxGk0fpbWhmB7g==}
+
   '@types/esrecurse@4.3.1':
     resolution: {integrity: sha512-xJBAbDifo5hpffDBuHl0Y8ywswbiAp/Wi7Y/GtAgSlZyIABppyurxVueOPE8LUQOxdlgi6Zqce7uoEpqNTeiUw==}
 
@@ -921,8 +930,8 @@ packages:
   '@types/express-serve-static-core@5.1.3':
     resolution: {integrity: sha512-dPfW8NFiOF4wOHc7+N/QSxlY9cfSsenewGbAz8C8U/MULPd/YZ27LvJUIlzaXie7e6Ove9YunJGgC9tbHD2cKw==}
 
-  '@types/express@5.0.3':
-    resolution: {integrity: sha512-wGA0NX93b19/dZC1J18tKWVIYWyyF2ZjT9vin/NRu0qzzvfVzWjs04iq2rQ3H65vCTQYlRqs3YHfY7zjdV+9Kw==}
+  '@types/express@5.0.6':
+    resolution: {integrity: sha512-sKYVuV7Sv9fbPIt/442koC7+IIwK5olP1KWeD88e/idgoJqDm3JV/YUiPwkoKK92ylff2MGxSz1CSjsXelx0YA==}
 
   '@types/geojson@7946.0.16':
     resolution: {integrity: sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg==}
@@ -950,9 +959,6 @@ packages:
 
   '@types/pg-pool@2.0.7':
     resolution: {integrity: sha512-U4CwmGVQcbEuqpyju8/ptOKg6gEC+Tqsvj2xS9o1g71bUh8twxnC6ZL5rZKCsGN0iyH0CwgUyc9VR5owNQF9Ng==}
-
-  '@types/pg@8.15.5':
-    resolution: {integrity: sha512-LF7lF6zWEKxuT3/OR8wAZGzkg4ENGXFNyiV/JeOt9z5B+0ZVwbql9McqX5c/WStFq1GaGso7H1AzP/qSzmlCKQ==}
 
   '@types/pg@8.15.6':
     resolution: {integrity: sha512-NoaMtzhxOrubeL/7UZuNTrejB4MPAJ0RpxZqXQf2qXuVlTPuG6Y8p4u9dKRaue4yjmC7ZhzVO2/Yyyn25znrPQ==}
@@ -1234,8 +1240,8 @@ packages:
   buffer-equal-constant-time@1.0.1:
     resolution: {integrity: sha512-zRpUiDwd/xk6ADqPMATG8vc9VPrkck7T07OIx0gnjmJAnHnTVXNQG3vfvWNuiZIkwu9KrKdA1iJKfsfTVxE6NA==}
 
-  bullmq@6.3.15:
-    resolution: {integrity: sha512-J6EZH/DhfGnsIafSK2FfNJ6XtSAQnD4YM1vts5+jT4usLYkxV2uU72oKNpmyxUQl9U4sFEvK5MO5SJ+dGlwOLQ==}
+  bullmq@6.3.17:
+    resolution: {integrity: sha512-1OFJqrW7h9OMfnYPgH/1O9J7g+6bMKJpBzlhP9AvhfLTHdd/kXbFsZueDiPlbJoux7M9zzK9WVL91wC889MYDw==}
     engines: {node: '>=14.17.0'}
     peerDependencies:
       bullmq-otel: '>=2.0.0'
@@ -1373,6 +1379,10 @@ packages:
     resolution: {integrity: sha512-YyUI6AEuY/Wpt8KWLgZHsIU86atmikuoOmCfommt0LYHiQSPjvX2AcFc38PX0CBpr2RCyZhjex+NS/LPOv6YqA==}
     engines: {node: '>=12'}
 
+  d3-format@3.1.2:
+    resolution: {integrity: sha512-AJDdYOdnyRDV5b6ArilzCPPwc1ejkHcoyFarqlPqT7zRYjhavcT3uSrqcMvsgh2CgoPbK3RCwyHaVyxYcP2Arg==}
+    engines: {node: '>=12'}
+
   d3-geo@3.1.0:
     resolution: {integrity: sha512-JEo5HxXDdDYXCaWdwLRt79y7giK8SbhZJbFWXqbRTolCHFI5jRqteLzCsq51NKbUoX0PjBVSohxrx+NoOUujYA==}
     engines: {node: '>=12'}
@@ -1485,8 +1495,8 @@ packages:
     resolution: {integrity: sha512-Zf5H2Kxt2xjTvbJvP2ZWLEICxA6j+hAmMzIlypy4xcBg1vKVnx89Wy0GbS+kf5cwCVFFzdCFh2XSCFNULS6csw==}
     engines: {node: '>= 0.4'}
 
-  es-module-lexer@3.0.3:
-    resolution: {integrity: sha512-yWGe1O/j+almnV4hOYrmZo8u58JdnmXEMneRQAYkWtqSiT86yoMIEKF4rpqEDj52tbYl3xceBD3DQIBwcsC9Pw==}
+  es-module-lexer@3.0.4:
+    resolution: {integrity: sha512-BldNY5mwkVu+cQ5Ymn3e6hB9Sx8XHx4ZevWbiUyZbfKxJxYO27Hf0wfzkxIaD5CAJMaGl3YspKELj0ff/7nCMA==}
 
   es-object-atoms@1.1.2:
     resolution: {integrity: sha512-HWcBoN6NileqtSydK2FqHbS/LoDd2pqrnQHLyJzBj4kOp/ky2MWMN694xOfkK8/SnUsW2DH7EfyVlydKCsm1Zw==}
@@ -1529,8 +1539,8 @@ packages:
     resolution: {integrity: sha512-tD40eHxA35h0PEIZNeIjkHoDR4YjjJp34biM0mDvplBe//mB+IHCqHDGV7pxF+7MklTvighcCPPZC7ynWyjdTA==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
-  eslint@10.12.0:
-    resolution: {integrity: sha512-npHjrHb2o4ehH3mE+YuxABR+0gyb0aVWCIolgJDArwCiHEIsonBm3ZKjel5b0U5+a+MbEvIyRCGCzD3eKKK2NA==}
+  eslint@10.13.0:
+    resolution: {integrity: sha512-UohDjD4zSzEwhf58M3O7vc/ycc8O1I7dNlhtD0WxE8Px8EHNJKtUwzBqrzeGhisRuv2ag4sAYswszCJRgKXYUg==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
     hasBin: true
     peerDependencies:
@@ -2041,8 +2051,8 @@ packages:
     resolution: {integrity: sha512-s+w+rBWnpTMwSFbaE0UXsRlg7hU4FjekKU4eyAih5T8nJuNZT1nNsskXpxmeqSK9UzkBl6UgRlnKc8hz8IEqOw==}
     hasBin: true
 
-  nodemailer@10.1.0:
-    resolution: {integrity: sha512-fXW8AulB25aOTuwfRYV6lqHyfz2VM4rr4SGXH03mE7x5znEUpzL5mu6anARUpZN7744Ziwkmr4AxSLPJsBQspg==}
+  nodemailer@10.1.7:
+    resolution: {integrity: sha512-OQa6FDln5fLttmqSbjDiRYvFDOFNrBqfiOwHPlEbURil3b+vPB1v8xpi+Sp46drzNDlsTnNsS502vthmz56r4w==}
     engines: {node: '>=20.0.0'}
 
   nostics@1.3.0:
@@ -2202,8 +2212,8 @@ packages:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
 
-  prisma@7.10.0:
-    resolution: {integrity: sha512-o0ornyJOWgygVAzGCpr8PdXV8EJLHyVGDDUr/voBQt8Azzw8cYTByzzPGcA/m4tCkPcnJA8raEOv2CslsKhPEw==}
+  prisma@7.10.1:
+    resolution: {integrity: sha512-GoVeErHGGtsSjsflQ1r2BA3RKTXtxNraQJz8OLkLhoLr7OgCscdx4qw4WMM4HnERYc+a1cq2VnMNbep+vOjNcQ==}
     engines: {node: ^20.19 || ^22.12 || >=24.0}
     hasBin: true
     peerDependencies:
@@ -2304,8 +2314,8 @@ packages:
     resolution: {integrity: sha512-QT7FVMXfWOYFbeRBF6nu+I6tr2Tf3u0q8RIEjNob/heKY/nh7drD/k7eeMFmSQgnTtCzLDcCu/XEnpW2wk4xCQ==}
     engines: {node: '>=9.3.0 || >=8.10.0 <9.0.0'}
 
-  ret@0.5.0:
-    resolution: {integrity: sha512-I1XxrZSQ+oErkRR4jYbAyEEu2I0avBvvMM5JN+6EBprOGRCs63ENqZ3vjavq8fBw2+62G5LF5XelKwuJpcvcxw==}
+  ret@0.5.1:
+    resolution: {integrity: sha512-Z/nyvABwcRnRD2mMP7Kz6G1dFZZqX1mNErOnxF42OCQKE07b9k9hK9SQxHL3LFEZUdzQaLM4dId1E/E6Vm4WhA==}
     engines: {node: '>=10'}
 
   retry@0.12.0:
@@ -2753,9 +2763,9 @@ snapshots:
 
   '@electric-sql/pglite@0.4.3': {}
 
-  '@eslint-community/eslint-utils@4.10.1(eslint@10.12.0(jiti@2.7.0))':
+  '@eslint-community/eslint-utils@4.10.1(eslint@10.13.0(jiti@2.7.0))':
     dependencies:
-      eslint: 10.12.0(jiti@2.7.0)
+      eslint: 10.13.0(jiti@2.7.0)
       eslint-visitor-keys: 3.4.3
 
   '@eslint-community/regexpp@4.12.2': {}
@@ -2776,9 +2786,9 @@ snapshots:
     dependencies:
       '@types/json-schema': 7.0.15
 
-  '@eslint/js@10.0.1(eslint@10.12.0(jiti@2.7.0))':
+  '@eslint/js@10.0.1(eslint@10.13.0(jiti@2.7.0))':
     optionalDependencies:
-      eslint: 10.12.0(jiti@2.7.0)
+      eslint: 10.13.0(jiti@2.7.0)
 
   '@eslint/object-schema@3.0.5': {}
 
@@ -3020,7 +3030,7 @@ snapshots:
       '@opentelemetry/sdk-trace': 2.12.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions': 1.43.0
 
-  '@opentelemetry/instrumentation-express@0.71.0(@opentelemetry/api@1.9.1)':
+  '@opentelemetry/instrumentation-express@0.71.1(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.12.0(@opentelemetry/api@1.9.1)
@@ -3048,7 +3058,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@opentelemetry/instrumentation-pg@0.75.0(@opentelemetry/api@1.9.1)':
+  '@opentelemetry/instrumentation-pg@0.76.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.12.0(@opentelemetry/api@1.9.1)
@@ -3191,25 +3201,25 @@ snapshots:
 
   '@pinojs/redact@0.4.0': {}
 
-  '@prisma/adapter-pg@7.10.0':
+  '@prisma/adapter-pg@7.10.1':
     dependencies:
-      '@prisma/driver-adapter-utils': 7.10.0
+      '@prisma/driver-adapter-utils': 7.10.1
       '@types/pg': 8.23.1
       pg: 8.23.1
       postgres-array: 3.0.4
     transitivePeerDependencies:
       - pg-native
 
-  '@prisma/client-runtime-utils@7.10.0': {}
+  '@prisma/client-runtime-utils@7.10.1': {}
 
-  '@prisma/client@7.10.0(prisma@7.10.0(@types/node@24.19.2)(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(typescript@5.9.3)':
+  '@prisma/client@7.10.1(prisma@7.10.1(@types/node@24.19.2)(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
-      '@prisma/client-runtime-utils': 7.10.0
+      '@prisma/client-runtime-utils': 7.10.1
     optionalDependencies:
-      prisma: 7.10.0(@types/node@24.19.2)(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+      prisma: 7.10.1(@types/node@24.19.2)(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
       typescript: 5.9.3
 
-  '@prisma/config@7.10.0':
+  '@prisma/config@7.10.1':
     dependencies:
       c12: 3.3.4
       deepmerge-ts: 8.0.2
@@ -3218,7 +3228,7 @@ snapshots:
     transitivePeerDependencies:
       - magicast
 
-  '@prisma/debug@7.10.0': {}
+  '@prisma/debug@7.10.1': {}
 
   '@prisma/debug@7.2.0': {}
 
@@ -3242,28 +3252,28 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@prisma/driver-adapter-utils@7.10.0':
+  '@prisma/driver-adapter-utils@7.10.1':
     dependencies:
-      '@prisma/debug': 7.10.0
+      '@prisma/debug': 7.10.1
 
-  '@prisma/engines-version@7.10.0-4.0edf323efd1d98336f3f0a68684b56f689b900d3': {}
+  '@prisma/engines-version@8.1.0-1.d1b3f377ca835d73fd50954a5e22128b9ebdd6b8': {}
 
-  '@prisma/engines@7.10.0':
+  '@prisma/engines@7.10.1':
     dependencies:
-      '@prisma/debug': 7.10.0
-      '@prisma/engines-version': 7.10.0-4.0edf323efd1d98336f3f0a68684b56f689b900d3
-      '@prisma/fetch-engine': 7.10.0
-      '@prisma/get-platform': 7.10.0
+      '@prisma/debug': 7.10.1
+      '@prisma/engines-version': 8.1.0-1.d1b3f377ca835d73fd50954a5e22128b9ebdd6b8
+      '@prisma/fetch-engine': 7.10.1
+      '@prisma/get-platform': 7.10.1
 
-  '@prisma/fetch-engine@7.10.0':
+  '@prisma/fetch-engine@7.10.1':
     dependencies:
-      '@prisma/debug': 7.10.0
-      '@prisma/engines-version': 7.10.0-4.0edf323efd1d98336f3f0a68684b56f689b900d3
-      '@prisma/get-platform': 7.10.0
+      '@prisma/debug': 7.10.1
+      '@prisma/engines-version': 8.1.0-1.d1b3f377ca835d73fd50954a5e22128b9ebdd6b8
+      '@prisma/get-platform': 7.10.1
 
-  '@prisma/get-platform@7.10.0':
+  '@prisma/get-platform@7.10.1':
     dependencies:
-      '@prisma/debug': 7.10.0
+      '@prisma/debug': 7.10.1
 
   '@prisma/get-platform@7.2.0':
     dependencies:
@@ -3442,6 +3452,8 @@ snapshots:
 
   '@types/d3-color@3.1.0': {}
 
+  '@types/d3-color@3.1.3': {}
+
   '@types/d3-delaunay@6.0.1': {}
 
   '@types/d3-format@3.0.1': {}
@@ -3452,13 +3464,13 @@ snapshots:
 
   '@types/d3-interpolate@3.0.1':
     dependencies:
-      '@types/d3-color': 3.1.0
+      '@types/d3-color': 3.1.3
 
   '@types/d3-path@3.1.1': {}
 
   '@types/d3-scale@4.0.2':
     dependencies:
-      '@types/d3-time': 3.0.0
+      '@types/d3-time': 3.0.4
 
   '@types/d3-shape@3.1.7':
     dependencies:
@@ -3467,6 +3479,8 @@ snapshots:
   '@types/d3-time-format@2.1.0': {}
 
   '@types/d3-time@3.0.0': {}
+
+  '@types/d3-time@3.0.4': {}
 
   '@types/esrecurse@4.3.1': {}
 
@@ -3479,7 +3493,7 @@ snapshots:
       '@types/range-parser': 1.2.7
       '@types/send': 1.2.1
 
-  '@types/express@5.0.3':
+  '@types/express@5.0.6':
     dependencies:
       '@types/body-parser': 1.19.6
       '@types/express-serve-static-core': 5.1.3
@@ -3510,13 +3524,7 @@ snapshots:
 
   '@types/pg-pool@2.0.7':
     dependencies:
-      '@types/pg': 8.15.5
-
-  '@types/pg@8.15.5':
-    dependencies:
-      '@types/node': 24.19.2
-      pg-protocol: 1.16.1
-      pg-types: 2.2.0
+      '@types/pg': 8.23.1
 
   '@types/pg@8.15.6':
     dependencies:
@@ -3547,15 +3555,15 @@ snapshots:
       '@types/http-errors': 2.0.5
       '@types/node': 24.19.2
 
-  '@typescript-eslint/eslint-plugin@8.71.2(@typescript-eslint/parser@8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3))(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)':
+  '@typescript-eslint/eslint-plugin@8.71.2(@typescript-eslint/parser@8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3))(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.71.2
-      '@typescript-eslint/type-utils': 8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)
-      '@typescript-eslint/utils': 8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)
+      '@typescript-eslint/type-utils': 8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3)
       '@typescript-eslint/visitor-keys': 8.71.2
-      eslint: 10.12.0(jiti@2.7.0)
+      eslint: 10.13.0(jiti@2.7.0)
       ignore: 7.0.12
       natural-compare: 1.4.0
       ts-api-utils: 2.5.0(typescript@5.9.3)
@@ -3563,14 +3571,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/parser@8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)':
+  '@typescript-eslint/parser@8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3)':
     dependencies:
       '@typescript-eslint/scope-manager': 8.71.2
       '@typescript-eslint/types': 8.71.2
       '@typescript-eslint/typescript-estree': 8.71.2(typescript@5.9.3)
       '@typescript-eslint/visitor-keys': 8.71.2
       debug: 4.4.3
-      eslint: 10.12.0(jiti@2.7.0)
+      eslint: 10.13.0(jiti@2.7.0)
       typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
@@ -3593,13 +3601,13 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
-  '@typescript-eslint/type-utils@8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)':
+  '@typescript-eslint/type-utils@8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3)':
     dependencies:
       '@typescript-eslint/types': 8.71.2
       '@typescript-eslint/typescript-estree': 8.71.2(typescript@5.9.3)
-      '@typescript-eslint/utils': 8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3)
       debug: 4.4.3
-      eslint: 10.12.0(jiti@2.7.0)
+      eslint: 10.13.0(jiti@2.7.0)
       ts-api-utils: 2.5.0(typescript@5.9.3)
       typescript: 5.9.3
     transitivePeerDependencies:
@@ -3622,13 +3630,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/utils@8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)':
+  '@typescript-eslint/utils@8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.10.1(eslint@10.12.0(jiti@2.7.0))
+      '@eslint-community/eslint-utils': 4.10.1(eslint@10.13.0(jiti@2.7.0))
       '@typescript-eslint/scope-manager': 8.71.2
       '@typescript-eslint/types': 8.71.2
       '@typescript-eslint/typescript-estree': 8.71.2(typescript@5.9.3)
-      eslint: 10.12.0(jiti@2.7.0)
+      eslint: 10.13.0(jiti@2.7.0)
       typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
@@ -3926,7 +3934,7 @@ snapshots:
 
   buffer-equal-constant-time@1.0.1: {}
 
-  bullmq@6.3.15(ioredis@6.0.0)(pg@8.23.1):
+  bullmq@6.3.17(ioredis@6.0.0)(pg@8.23.1):
     dependencies:
       cron-parser: 5.10.2
       msgpackr: 2.1.0
@@ -4049,6 +4057,8 @@ snapshots:
 
   d3-format@3.1.0: {}
 
+  d3-format@3.1.2: {}
+
   d3-geo@3.1.0:
     dependencies:
       d3-array: 3.2.4
@@ -4062,7 +4072,7 @@ snapshots:
   d3-scale@4.0.2:
     dependencies:
       d3-array: 3.2.4
-      d3-format: 3.1.0
+      d3-format: 3.1.2
       d3-interpolate: 3.0.1
       d3-time: 3.1.0
       d3-time-format: 4.1.0
@@ -4136,7 +4146,7 @@ snapshots:
 
   es-errors@1.3.0: {}
 
-  es-module-lexer@3.0.3: {}
+  es-module-lexer@3.0.4: {}
 
   es-object-atoms@1.1.2:
     dependencies:
@@ -4148,18 +4158,18 @@ snapshots:
 
   escape-string-regexp@4.0.0: {}
 
-  eslint-plugin-vue@10.11.1(@typescript-eslint/parser@8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3))(eslint@10.12.0(jiti@2.7.0))(vue-eslint-parser@10.4.1(eslint@10.12.0(jiti@2.7.0))):
+  eslint-plugin-vue@10.11.1(@typescript-eslint/parser@8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3))(eslint@10.13.0(jiti@2.7.0))(vue-eslint-parser@10.4.1(eslint@10.13.0(jiti@2.7.0))):
     dependencies:
-      '@eslint-community/eslint-utils': 4.10.1(eslint@10.12.0(jiti@2.7.0))
-      eslint: 10.12.0(jiti@2.7.0)
+      '@eslint-community/eslint-utils': 4.10.1(eslint@10.13.0(jiti@2.7.0))
+      eslint: 10.13.0(jiti@2.7.0)
       natural-compare: 1.4.0
       nth-check: 2.1.1
       postcss-selector-parser: 7.1.6
       semver: 7.8.5
-      vue-eslint-parser: 10.4.1(eslint@10.12.0(jiti@2.7.0))
+      vue-eslint-parser: 10.4.1(eslint@10.13.0(jiti@2.7.0))
       xml-name-validator: 5.0.0
     optionalDependencies:
-      '@typescript-eslint/parser': 8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3)
 
   eslint-scope@9.1.2:
     dependencies:
@@ -4172,9 +4182,9 @@ snapshots:
 
   eslint-visitor-keys@5.0.1: {}
 
-  eslint@10.12.0(jiti@2.7.0):
+  eslint@10.13.0(jiti@2.7.0):
     dependencies:
-      '@eslint-community/eslint-utils': 4.10.1(eslint@10.12.0(jiti@2.7.0))
+      '@eslint-community/eslint-utils': 4.10.1(eslint@10.13.0(jiti@2.7.0))
       '@eslint-community/regexpp': 4.12.2
       '@eslint/config-array': 0.23.5
       '@eslint/config-helpers': 0.7.0
@@ -4432,7 +4442,7 @@ snapshots:
   import-in-the-middle@3.5.2:
     dependencies:
       cjs-module-lexer: 2.3.0
-      es-module-lexer: 3.0.3
+      es-module-lexer: 3.0.4
       module-details-from-path: 1.0.4
 
   imurmurhash@0.1.4: {}
@@ -4697,7 +4707,7 @@ snapshots:
       detect-libc: 2.1.2
     optional: true
 
-  nodemailer@10.1.0: {}
+  nodemailer@10.1.7: {}
 
   nostics@1.3.0: {}
 
@@ -4850,11 +4860,11 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prisma@7.10.0(@types/node@24.19.2)(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3):
+  prisma@7.10.1(@types/node@24.19.2)(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3):
     dependencies:
-      '@prisma/config': 7.10.0
+      '@prisma/config': 7.10.1
       '@prisma/dev': 0.24.17(typescript@5.9.3)
-      '@prisma/engines': 7.10.0
+      '@prisma/engines': 7.10.1
       '@prisma/studio-core': 0.33.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       mysql2: 3.24.6(@types/node@24.19.2)
       postgres: 3.4.7
@@ -4959,7 +4969,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  ret@0.5.0: {}
+  ret@0.5.1: {}
 
   retry@0.12.0: {}
 
@@ -5004,7 +5014,7 @@ snapshots:
 
   safe-regex2@5.1.2:
     dependencies:
-      ret: 0.5.0
+      ret: 0.5.1
 
   safe-stable-stringify@2.5.0: {}
 
@@ -5155,13 +5165,13 @@ snapshots:
       media-typer: 1.1.1
       mime-types: 3.0.2
 
-  typescript-eslint@8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3):
+  typescript-eslint@8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.71.2(@typescript-eslint/parser@8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3))(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)
-      '@typescript-eslint/parser': 8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)
+      '@typescript-eslint/eslint-plugin': 8.71.2(@typescript-eslint/parser@8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3))(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3)
       '@typescript-eslint/typescript-estree': 8.71.2(typescript@5.9.3)
-      '@typescript-eslint/utils': 8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)
-      eslint: 10.12.0(jiti@2.7.0)
+      '@typescript-eslint/utils': 8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@5.9.3)
+      eslint: 10.13.0(jiti@2.7.0)
       typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
@@ -5221,10 +5231,10 @@ snapshots:
 
   vscode-uri@3.2.0: {}
 
-  vue-eslint-parser@10.4.1(eslint@10.12.0(jiti@2.7.0)):
+  vue-eslint-parser@10.4.1(eslint@10.13.0(jiti@2.7.0)):
     dependencies:
       debug: 4.4.3
-      eslint: 10.12.0(jiti@2.7.0)
+      eslint: 10.13.0(jiti@2.7.0)
       eslint-scope: 9.1.2
       eslint-visitor-keys: 5.0.1
       espree: 11.2.0
