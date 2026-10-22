@@ -1,5 +1,5 @@
 # Vue SPA: build with Node, serve static files with unprivileged nginx (non-root, port 8080).
-FROM node:24-alpine AS build
+FROM node:25-alpine AS build
 WORKDIR /app
 RUN corepack enable
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./

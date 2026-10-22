@@ -1,5 +1,5 @@
 # One image, two modes: API (default CMD) and worker (`node dist/src/worker.js`).
-FROM node:24-alpine AS build
+FROM node:25-alpine AS build
 RUN corepack enable
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -9,7 +9,7 @@ COPY apps/api apps/api
 RUN pnpm --filter api build \
  && pnpm --filter api deploy --prod --legacy /out
 
-FROM node:24-alpine
+FROM node:25-alpine
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build --chown=node:node /out ./
