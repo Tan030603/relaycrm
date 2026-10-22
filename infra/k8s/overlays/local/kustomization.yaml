@@ -1,0 +1,41 @@
+# Local overlay: a k3s/kind cluster on a laptop, talking to the Postgres and Redis that
+# docker compose runs on the host (host.docker.internal). Images are imported locally:
+#   docker save relaycrm-api:local relaycrm-web:local | docker exec -i <k3s> ctr images import -
+#   kubectl apply -k infra/k8s/overlays/local
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+images:
+  - name: ghcr.io/tan030603/relaycrm-api
+    newName: relaycrm-api
+    newTag: local
+  - name: ghcr.io/tan030603/relaycrm-web
+    newName: relaycrm-web
+    newTag: local
+patches:
+  - target: { kind: Secret, name: relaycrm-secrets }
+    patch: |-
+      - op: replace
+        path: /stringData
+        value:
+          DATABASE_URL: postgresql://app_user:app_user_dev@pgbouncer:6432/relaycrm
+          UPSTREAM_DATABASE_URL: postgresql://app_user:app_user_dev@host.docker.internal:5440/relaycrm
+          MIGRATION_DATABASE_URL: postgresql://relaycrm:relaycrm@host.docker.internal:5440/relaycrm
+          REDIS_URL: redis://host.docker.internal:6380
+          SMTP_URL: smtp://host.docker.internal:1025
+          JWT_SECRET: local-k3s-only-secret-at-least-32-characters
+          WEBHOOK_SECRET: local
+          ANTHROPIC_API_KEY: ""
+  - target: { kind: ConfigMap, name: relaycrm-config }
+    patch: |-
+      - op: replace
+        path: /data/REDIS_ADDRESS
+        value: host.docker.internal:6380
+      - op: replace
+        path: /data/APP_URL
+        value: http://localhost:8081
+  # Docker Desktop: host.docker.internal can resolve to an IPv6 address pods cannot reach;
+  # PgBouncer retries over IPv4, but a burst of failed logins is cached briefly (restart
+  # the pgbouncer pod if API pods report "server login has been failing").
+  # nginx in the web pod proxies /api to the "api" Service (same name as in Compose).

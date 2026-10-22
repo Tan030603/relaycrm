@@ -1,6 +1,6 @@
 # RelayCRM — Multi-Tenant CRM with Event-Driven Workflow Automation
 
-> Working title. Status: **Draft v0.1** (design before demo build)
+> Status: **v1.0, implemented.** Demo scope plus the Phase 2 items marked ✅ below are built and tested; see the README for how to run it and `docs/benchmarks.md` for measured numbers.
 > Stack: TypeScript everywhere. NestJS (API + worker), Vue 3 (SPA), Prisma, PostgreSQL, Redis + BullMQ, Docker, GitHub Actions (Kubernetes after demo)
 
 ---
@@ -19,7 +19,9 @@ RelayCRM is a multi-tenant SaaS CRM. Each company (tenant) gets an isolated work
 
 ### 1.2 Non-goals (for v1 demo)
 
-Billing/plans, WhatsApp, CSV import, dashboards/reports, public API, AI features, visual drag-and-drop flow canvas, multi-region, Kubernetes manifests (added after demo works).
+Billing/plans, WhatsApp, CSV import, dashboards/reports, public API, visual drag-and-drop flow canvas, multi-region.
+
+> Changed during the build: AI features (deal summary + follow-up draft, plain-English rule drafting via Claude) and Kubernetes manifests moved into scope; both are optional at runtime.
 
 ---
 
@@ -38,7 +40,9 @@ Billing/plans, WhatsApp, CSV import, dashboards/reports, public API, AI features
 
 ### 2.2 Phase 2 (after demo)
 
-Time-based triggers (idle lead), webhook action, WhatsApp action, audit log, dashboards, public API, plans & quotas, Kubernetes + autoscaling, AI summaries.
+✅ Time-based trigger (`deal.idle`), ✅ webhook action (HTTPS only, SSRF guard, HMAC signature), WhatsApp action, ✅ audit log (rule, invitation, member, retry events), dashboards, public API, plans & quotas, ✅ Kubernetes manifests + HPA/KEDA autoscaling, ✅ AI summaries.
+
+Also built beyond the original table, from the UI design: a Today home page, one-click rule templates, a deal page with an AI helper, and embeddable website lead forms (public, rate-limited, honeypot, round-robin assignment) that fire `lead.created`.
 
 ---
 
@@ -507,6 +511,25 @@ relaycrm/
 | 5 | Seed data, k6 baseline, README, architecture diagram, demo video | Benchmarks documented |
 | 6+ | Time-based triggers, Kubernetes + KEDA, quotas, audit log | Phase 2 backlog |
 
+### 14.1 Status (2026-10-14)
+
+| Week | State | Notes |
+|---|---|---|
+| 1 | ✅ Done | RLS on every tenant table, catalog test guards new tables; refresh-token rotation with reuse detection; invitations + roles |
+| 2 | ✅ Done | Contacts (search, edit, delete), deals + Kanban (per-column cursor paging), tasks, activities timeline |
+| 3 | ✅ Done | Outbox + leased relay (`SKIP LOCKED`), BullMQ, worker entrypoint, idempotent runs; duplicate-delivery and cross-tenant job tests |
+| 4 | ✅ Done | Rule builder (form based), dry-run test, `send_email` (Mailpit), run log with steps, backoff 5 s/30 s/5 min, DLQ, manual retry |
+| 5 | ✅ Done | Seed data (demo + bulk), k6 scenarios, benchmarks, README, ADRs; GraphQL read-only run history |
+| 6+ | ✅ Done | `deal.idle` trigger, webhook action, audit log, monthly run quotas, Prometheus alert rules, Grafana dashboard, OpenTelemetry traces through the outbox, monthly partitions, streaming read replica with primary fallback, per-try retry history, stale-run reaper; Kubernetes manifests applied to a k3s cluster with KEDA scaling workers 1 → 20 on queue depth and PgBouncer in front of Postgres; Redis Sentinel failover tested; tenant cells (directory + per-cell databases) tested with two databases |
+
+Deviations from the design, on purpose:
+- `apps/worker` and `packages/*` are folders inside `apps/api` (one image, two entrypoints; see ADR 5).
+- Run partitions key on the event's `occurred_at` (not insert time), so a redelivered event lands in the same partition and the unique idempotency key still dedupes. Steps have no FK to runs (partitions of both are dropped together).
+- Per-tenant worker fairness is a Redis lease set (max N concurrent runs per tenant, excess re-delayed, leases expire after a crash), not sharded queues.
+
+Measured against the §8.1 targets ([benchmarks](benchmarks.md)): every latency target met at demo and growth data sizes (50M contacts, 5,000 tenants); ingestion at 1,000 events/s met; **processing at 1,000 runs/s not met on one laptop (~225 runs/s)**: measured cost is ~16 ms of Postgres CPU per run, so the target needs ~16 database cores or several tenant cells. Not built: a separate store for run history (stage 5 option; partitions cover retention today), Redis Cluster (Sentinel covers HA), automated tenant moves between cells, and cross-cell users.
+- Rules cache: Redis key per (tenant, trigger), 60 s TTL, deleted on every rule change (no pub/sub needed because all replicas read the same key).
+
 ---
 
 ## 15. Key Decisions (ADR candidates)
@@ -527,9 +550,9 @@ relaycrm/
 1. ~~Frontend framework~~ **Decided: Vue 3 + TypeScript.**
 2. ~~ORM/query layer~~ **Decided: Prisma** (raw SQL migrations for RLS; transaction wrapper sets tenant context).
 3. ~~API framework~~ **Decided: NestJS** (same codebase serves the `api` and `worker` entrypoints).
-4. Should reps be able to create their own rules, or owners only (v1 assumes owners only)?
-5. Which email provider for non-dev environments (Resend, SES, SMTP relay)?
-6. Is a free tier with hard quotas needed for the live demo deployment?
+4. ~~Rule authoring~~ **Decided: owners only in v1** (reps see rules read-only; enforced in the API, 403).
+5. ~~Email provider~~ **Decided: any SMTP relay via `SMTP_URL`** (Mailpit in dev). Resend/SES both offer SMTP, so no code change to switch.
+6. Free tier with hard quotas: still open; per-tenant rate limits and worker concurrency caps exist, monthly run quotas do not yet.
 
 ---
 

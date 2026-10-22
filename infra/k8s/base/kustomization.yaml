@@ -1,0 +1,20 @@
+# kubectl apply -k infra/k8s/base   (or an overlay: infra/k8s/overlays/local). Needs metrics-server for the HPA and KEDA for the worker scaler.
+# Postgres and Redis are expected to be managed services; their URLs come from the Secret.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: relaycrm
+resources:
+  - namespace.yaml
+  - config.yaml
+  - pgbouncer.yaml
+  - migrate-job.yaml
+  - api.yaml
+  - worker.yaml
+  - web.yaml
+images:
+  - name: relaycrm-api
+    newName: ghcr.io/tan030603/relaycrm-api
+    newTag: latest # CI pushes <commit sha>; pin it here per release
+  - name: relaycrm-web
+    newName: ghcr.io/tan030603/relaycrm-web
+    newTag: latest

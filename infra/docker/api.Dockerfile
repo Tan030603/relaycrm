@@ -1,4 +1,4 @@
-# One image, several modes: api now, worker in Phase 3 (same code, different command).
+# One image, two modes: API (default CMD) and worker (`node dist/src/worker.js`).
 FROM node:24-alpine AS build
 RUN corepack enable
 WORKDIR /app

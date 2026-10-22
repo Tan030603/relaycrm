@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
-import { ApiError, api, session, type Session } from './api';
+import { computed, reactive, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { api, errorText, session, type Session } from '../api';
 
-const mode = ref<'signup' | 'login'>('signup');
+const route = useRoute();
+const router = useRouter();
+const mode = computed(() => (route.path === '/signup' ? 'signup' : 'login'));
 const form = reactive({ company: '', name: '', email: '', password: '' });
 const busy = ref(false);
 const error = ref('');
@@ -13,13 +16,10 @@ async function submit() {
   try {
     const body = mode.value === 'signup' ? form : { email: form.email, password: form.password };
     session.value = await api<Session>(`/auth/${mode.value}`, { method: 'POST', body });
+    const next = typeof route.query.next === 'string' && /^\/(?!\/)/.test(route.query.next) ? route.query.next : '/';
+    router.replace(next);
   } catch (e) {
-    error.value =
-      e instanceof ApiError && e.details?.length
-        ? e.details.map((d) => `${d.path}: ${d.message}`).join(' · ')
-        : e instanceof Error
-          ? e.message
-          : 'Something went wrong';
+    error.value = errorText(e);
   } finally {
     busy.value = false;
   }
@@ -65,9 +65,9 @@ async function submit() {
       </form>
       <p class="switch">
         {{ mode === 'signup' ? 'Already have an account?' : 'New to RelayCRM?' }}
-        <button type="button" class="link" @click="mode = mode === 'signup' ? 'login' : 'signup'">
+        <RouterLink class="link" :to="{ path: mode === 'signup' ? '/login' : '/signup', query: route.query }">
           {{ mode === 'signup' ? 'Sign in' : 'Create a workspace' }}
-        </button>
+        </RouterLink>
       </p>
     </main>
   </div>
@@ -135,7 +135,6 @@ form {
   background: none;
   color: #4338ca;
   font-weight: 700;
-  cursor: pointer;
 }
 @media (max-width: 720px) {
   .brand {

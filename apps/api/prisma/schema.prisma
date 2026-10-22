@@ -23,9 +23,12 @@ model Tenant {
   id          String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
   name        String
   slug        String       @unique
+  plan        String       @default("free") // quotas per plan: see PLAN_RUN_QUOTA in worker.ts
+  status      String       @default("active")
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
   memberships Membership[]
   contacts    Contact[]
+  deals       Deal[]
 
   @@map("tenants")
 }
@@ -67,13 +70,305 @@ model Contact {
   source    String?
   ownerId   String?  @map("owner_id") @db.Uuid
   tags      String[] @default([])
+  formId    String?  @map("form_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
   tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   owner     User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  deals     Deal[]
 
   @@index([tenantId, id])
   @@index([tenantId, email])
   @@index([tenantId, ownerId])
+  @@index([tenantId, formId, createdAt])
   @@map("contacts")
+}
+
+// Global like users: looked up by token hash before any tenant is known.
+// A rotation chain shares family_id; presenting a revoked token revokes the family.
+model RefreshToken {
+  id        String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  familyId  String    @map("family_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+model Invitation {
+  id         String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  email      String
+  role       Role
+  tokenHash  String    @unique @map("token_hash")
+  invitedBy  String    @map("invited_by") @db.Uuid
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  acceptedAt DateTime? @map("accepted_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([tenantId, id])
+  @@map("invitations")
+}
+
+enum DealStage {
+  new
+  qualified
+  proposal
+  negotiation
+  won
+
+  @@map("deal_stage")
+}
+
+model Deal {
+  id                String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  contactId         String?   @map("contact_id") @db.Uuid
+  title             String
+  value             Decimal   @default(0) @db.Decimal(14, 2)
+  currency          String    @default("USD")
+  stage             DealStage @default(new)
+  ownerId           String?   @map("owner_id") @db.Uuid
+  expectedCloseDate DateTime? @map("expected_close_date") @db.Date
+  stageChangedAt    DateTime  @default(now()) @map("stage_changed_at") @db.Timestamptz(3)
+  idleEventAt       DateTime? @map("idle_event_at") @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact           Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, stage, id])
+  @@index([tenantId, ownerId])
+  @@index([tenantId, stageChangedAt])
+  @@index([tenantId, contactId])
+  @@map("deals")
+}
+
+enum TaskStatus {
+  open
+  done
+
+  @@map("task_status")
+}
+
+model Task {
+  id              String     @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId        String     @map("tenant_id") @db.Uuid
+  title           String
+  dueAt           DateTime?  @map("due_at") @db.Timestamptz(3)
+  assigneeId      String?    @map("assignee_id") @db.Uuid
+  status          TaskStatus @default(open)
+  dealId          String?    @map("deal_id") @db.Uuid
+  contactId       String?    @map("contact_id") @db.Uuid
+  createdByRuleId String?    @map("created_by_rule_id") @db.Uuid
+  // run_id:action_index for tasks made by automation, so a retried step never makes a second task.
+  idempotencyKey  String?    @map("idempotency_key")
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, assigneeId, status, dueAt])
+  @@index([tenantId, status, id])
+  @@index([tenantId, dealId])
+  @@map("tasks")
+}
+
+// Partitioned by month on occurred_at (see migration 20261014500000); PK includes it.
+model Activity {
+  id         String   @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  type       String
+  contactId  String?  @map("contact_id") @db.Uuid
+  dealId     String?  @map("deal_id") @db.Uuid
+  note       String
+  actorId    String?  @map("actor_id") @db.Uuid // null = done by an automation
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(3)
+
+  @@id([id, occurredAt])
+  @@index([tenantId, dealId, occurredAt])
+  @@index([tenantId, contactId, occurredAt])
+  @@index([tenantId, occurredAt])
+  @@map("activities")
+}
+
+model AutomationRule {
+  id          String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  name        String
+  description String?
+  enabled     Boolean  @default(true)
+  version     Int      @default(1)
+  triggerType String   @map("trigger_type")
+  conditions  Json
+  actions     Json
+  templateKey String?  @map("template_key")
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([tenantId, triggerType, enabled])
+  @@index([tenantId, id])
+  @@map("automation_rules")
+}
+
+// Transactional outbox: written in the same transaction as the business change.
+model DomainEvent {
+  id            String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  type          String
+  aggregateType String    @map("aggregate_type")
+  aggregateId   String    @map("aggregate_id") @db.Uuid
+  payload       Json
+  depth         Int       @default(0)
+  traceparent   String? // W3C trace context of the request that caused it
+  occurredAt    DateTime  @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  publishedAt   DateTime? @map("published_at") @db.Timestamptz(3)
+  lockedUntil   DateTime? @map("locked_until") @db.Timestamptz(3)
+  attempts      Int       @default(0)
+
+  @@index([tenantId, aggregateId])
+  @@map("domain_events")
+}
+
+enum RunStatus {
+  queued
+  running
+  succeeded
+  failed
+  skipped
+
+  @@map("run_status")
+}
+
+// Partitioned by month on created_at, which the worker sets to the event's occurred_at.
+model AutomationRun {
+  id             String              @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId       String              @map("tenant_id") @db.Uuid
+  ruleId         String              @map("rule_id") @db.Uuid
+  ruleVersion    Int                 @map("rule_version")
+  // Rule as it was when the run started: editing the rule never rewrites history.
+  ruleSnapshot   Json                @map("rule_snapshot")
+  // Event payload copied in: retries still work after the outbox row is purged (7 days).
+  payload        Json
+  eventId        String              @map("event_id") @db.Uuid
+  eventType      String              @map("event_type")
+  aggregateId    String              @map("aggregate_id") @db.Uuid
+  idempotencyKey String              @map("idempotency_key")
+  status         RunStatus           @default(queued)
+  skipReason     String?             @map("skip_reason")
+  attempt        Int                 @default(0)
+  depth          Int                 @default(0)
+  error          String?
+  startedAt      DateTime?           @map("started_at") @db.Timestamptz(3)
+  finishedAt     DateTime?           @map("finished_at") @db.Timestamptz(3)
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  steps          AutomationRunStep[]
+
+  @@id([id, createdAt])
+  @@unique([tenantId, idempotencyKey, createdAt])
+  @@index([tenantId, id])
+  @@index([tenantId, status, id])
+  @@index([tenantId, ruleId, id])
+  @@index([tenantId, aggregateId])
+  @@map("automation_runs")
+}
+
+enum StepStatus {
+  running
+  succeeded
+  failed
+
+  @@map("step_status")
+}
+
+// Partitioned by month on run_created_at (same month as its run).
+model AutomationRunStep {
+  id           String        @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId     String        @map("tenant_id") @db.Uuid
+  runId        String        @map("run_id") @db.Uuid
+  runCreatedAt DateTime      @map("run_created_at") @db.Timestamptz(3)
+  actionIndex Int           @map("action_index")
+  actionType  String        @map("action_type")
+  status      StepStatus
+  input       Json
+  output      Json?
+  error       String?
+  tries       Int           @default(1)
+  // One entry per failed try: { try, error, at, retryInMs | deadLettered }
+  history     Json          @default("[]")
+  startedAt   DateTime      @default(now()) @map("started_at") @db.Timestamptz(3)
+  finishedAt  DateTime?     @map("finished_at") @db.Timestamptz(3)
+  // Relation for queries only: the database has no FK (partitions of both tables are dropped together).
+  run         AutomationRun @relation(fields: [runId, runCreatedAt], references: [id, createdAt], onDelete: Cascade)
+
+  @@id([id, runCreatedAt])
+  @@unique([runId, actionIndex, runCreatedAt])
+  @@index([tenantId, runId])
+  @@map("automation_run_steps")
+}
+
+model LeadForm {
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  name       String
+  enabled    Boolean  @default(true)
+  headline   String   @default("Talk to our team")
+  fields     Json
+  assignToId String?  @map("assign_to_id") @db.Uuid
+  tags       String[] @default([])
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([tenantId, id])
+  @@map("lead_forms")
+}
+
+// Replays the first response for a repeated Idempotency-Key on POST.
+model IdempotencyKey {
+  tenantId   String   @map("tenant_id") @db.Uuid
+  key        String
+  route      String
+  status     Int?
+  response   Json?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@id([tenantId, key])
+  @@map("idempotency_keys")
+}
+
+model AuditLog {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  actorId   String?  @map("actor_id") @db.Uuid
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id") @db.Uuid
+  data      Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([tenantId, id])
+  @@map("audit_log")
+}
+
+// Shard directory (lives in the default cell; global like users). Placement is written
+// once at signup / invite acceptance and never changes.
+model TenantShard {
+  tenantId String @id @map("tenant_id") @db.Uuid
+  shard    String
+
+  @@map("tenant_shards")
+}
+
+model UserShard {
+  userId String @id @map("user_id") @db.Uuid
+  email  String @unique // keeps emails unique across every cell
+  shard  String
+
+  @@map("user_shards")
 }
